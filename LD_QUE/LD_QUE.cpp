@@ -3,12 +3,14 @@
 /*
     LD_QUE();
     ~LD_QUE();
-    int initQ();                                         // returns bad blocks found in FRAM
+    byte initQ(int RAMport, boolean fullInit = false)                                        // returns bad blocks found in FRAM
     void saveQ();
     byte currItemCount();
-    unsigned int writeQ(byte theLength, char theType);
-    int readQ(DEQUEUE_ITEM *myItem);
-    int copyItem(uint16_t addr, char *buff, int len); 
+    byte writeQitem(char *theData, byte theLength, char theType);
+    byte readQaddr(DEQUEUE_ITEM *myItem);
+    byte readItem(uint16_t addr, char *buff, int len);  // copies the item from the RAM address into the buffer for the 
+                                                        // specified length, & returns length of item copied.
+                                                        // NB: readQ returns the address in DEQUEUE_ITEM->addr                
 */
 
 const byte DeviceQueue = 3;
@@ -23,11 +25,11 @@ byte myCountOverflow = 0;       // The number of times the buffer has been full
 int myCountQd = 0;              // The number of items that has been queued in the buffer
 int myCountDeQd = 0;            // The number of items that has been de-queued from the buffer
 
-const int myHeaderSlot = 0;
-const int myDgStartSlot = 1;
-const int myDgEndSlot = 101;
-const byte myNoSlots = 100; 
-const byte myBlockSize = 69;
+const int MyHeaderSlot = 0;
+const int MyDgStartSlot = 1;
+const int MyDgEndSlot = 101;
+const byte MyNoSlots = 100; 
+const byte MyBlockSize = 69;
 
 //  FRAM Extended memory
 Adafruit_FRAM_SPI fram; //= Adafruit_FRAM_SPI(SPIportSelectFRAM); 
@@ -49,19 +51,22 @@ LD_QUE::~LD_QUE()
 }
 
 //  Queue initialisation - returns the number of bad blocks
-int LD_QUE::initQ(int RAMport, boolean fullInit = false)
+byte LD_QUE::initQ(int RAMport, boolean fullInit = false)
 {
 
     setCurrFunction(3);
     myRAMport = RAMport;
     fram = Adafruit_FRAM_SPI(myRAMport);
 
-    if (fram.begin()) {  
+    if (fram.begin()) 
+    {  
         //_ser.print("FRAM found and initialised.", true);
         setActive(true);
-    } else {
+    } 
+    else 
+    {
         //_ser.print("No SPI FRAM found ... check your connections\r\n", true);
-        setError(-128, false);
+        setError(-11, false);
         while (true) { ; }
     }
 
@@ -99,9 +104,9 @@ int LD_QUE::initQ(int RAMport, boolean fullInit = false)
         buff[0] = 'N';
         buff[4] = 'N';
         
-        for (i = 0; i < myNoSlots; i++) 
+        for (i = 0; i < MyNoSlots; i++) 
         { 
-            addrToUse = (i * myBlockSize);
+            addrToUse = (i * MyBlockSize);
             strVal = "";
             sprintf(myValue, Fmt3u, 0);  // format as a string "009"\0 - but only write the first 3 chars - not the null
             for (j=1; j<4; j++)
@@ -118,9 +123,9 @@ int LD_QUE::initQ(int RAMport, boolean fullInit = false)
             fram.writeEnable(false);
         }
         
-        for (i = 0; i < myNoSlots; i++) 
+        for (i = 0; i < MyNoSlots; i++) 
         {
-            addrToUse = (i * myBlockSize);
+            addrToUse = (i * MyBlockSize);
             myValue[0] = fram.read8(addrToUse);
             if (myValue[0] == 'N') 
             {
@@ -142,13 +147,19 @@ int LD_QUE::initQ(int RAMport, boolean fullInit = false)
                         {
                             if (initBuffIn[j] != initBuffOut[j]) { isOK = false; }
                         }
-                    } else {
+                    } 
+                    else 
+                    {
                         isOK = false;
                     }  
-                } else {
+                } 
+                else 
+                {
                     isOK = false;
                 }
-            } else {
+            } 
+            else 
+            {
                 isOK = false;
             }
             if (!isOK) 
@@ -156,7 +167,7 @@ int LD_QUE::initQ(int RAMport, boolean fullInit = false)
                 BadBlockCount++;
                 buff[0] = 'X';
                 fram.writeEnable(true);
-                fram.write((i * myBlockSize), (uint8_t *)buff, 1);
+                fram.write((i * MyBlockSize), (uint8_t *)buff, 1);
                 fram.writeEnable(false);
             }      
         }
@@ -169,7 +180,7 @@ int LD_QUE::initQ(int RAMport, boolean fullInit = false)
 void LD_QUE::saveQ()
 {   
     setCurrFunction(4);
-    uint16_t addr = myHeaderSlot;
+    uint16_t addr = MyHeaderSlot;
 
     if (isActive) 
     {
@@ -178,7 +189,7 @@ void LD_QUE::saveQ()
         fram.write(addr, (uint8_t *)myValue, 4);
         fram.writeEnable(false);
         addr += 4;
-        sprintf(myValue, Fmt3u, myNoSlots);
+        sprintf(myValue, Fmt3u, MyNoSlots);
         fram.writeEnable(true);
         fram.write(addr, (uint8_t *)myValue, 3);
         fram.writeEnable(false);
@@ -222,13 +233,15 @@ void LD_QUE::saveQ()
         fram.writeEnable(true);
         fram.write(addr, (uint8_t *)myValue, 4);
         fram.writeEnable(false);
-    } else {
-        return(setError(-10))
+    } 
+    else 
+    {
+        return(setError(-15))
     }
 }
 
-//->Queing>Prepares an empty slot in the queue for the item to be loaded - the FRAM address to write to is returned (or an error)
-unsigned int  LD_QUE::writeQ(byte theLength, char theType)
+//->Queing>Prepares an empty slot in the queue for the item to be loaded - length of item written is returned (or an error)
+byte LD_QUE::writeQitem(char *theData, byte theLength, char theType)
 {   
     // The format of the FRAM block is as follows:
     //     U999T<struct>
@@ -254,19 +267,19 @@ unsigned int  LD_QUE::writeQ(byte theLength, char theType)
     if (isActive) 
     {
         // check the length parm
-        if (theLength < 1 || (theLength + RAMoverhead) > myBlockSize) { (return(setError(-21)); }
+        if (theLength < 1 || (theLength + RAMoverhead) > MyBlockSize) { (return(setError(-21)); }
 
         // if ixWriteNext = ixReadNext AND count of items not zero, then Q is full - increment countQfull & exit with -22
         if (myNTwrite == myNTread && myCountCurr > 0) 
         {
             myCountOverflow++;
-            return(setError(-22));
+            return(setError(-20));
         }
             
         // get the index to use
         indexToUse = myNTwrite;
         // check if the block is in use and return an error if it is
-        addrToUse = (myDgStartSlot * myBlockSize) + (indexToUse * myBlockSize) - 1 ;
+        addrToUse = (MyDgStartSlot * MyBlockSize) + (indexToUse * MyBlockSize) - 1 ;
         noInterrupts();
         inUse[0] = fram.read8(addrToUse);
         // only do the following loop if In-Use is an 'X' (bad block)... we will try to read past it - if it is in Use (a 'Y') fall through to return
@@ -275,17 +288,17 @@ unsigned int  LD_QUE::writeQ(byte theLength, char theType)
             // OK, lets try the next block
             myNTwrite ++;
             // if we have wrapped past the end, go to the first block
-            if (myNTwrite > myDgEndSlot) { myNTwrite = myDgStartSlot; }
+            if (myNTwrite > MyDgEndSlot) { myNTwrite = MyDgStartSlot; }
             // get the index to use
             indexToUse = myNTwrite;
             // get the In-Use char
-            addrToUse = (indexToUse * myBlockSize) - 1;
+            addrToUse = (indexToUse * MyBlockSize) - 1;
             inUse[0] = fram.read8(addrToUse);
             // now check again
         }
         interrupts();
         // if we dropped through because it is in use, we cannot proceed.
-        if (inUse[0] == 'Y') { return(setError(-23)); }
+        if (inUse[0] == 'Y') { return(setError(-21)); }
         
         // OK, all is in order - we are set to go...
         
@@ -298,7 +311,7 @@ unsigned int  LD_QUE::writeQ(byte theLength, char theType)
         // increment the ixWriteNext    
         myNTwrite ++;
         // if ixWriteNext > ixMax then ixWriteNext = Start Slot;
-        if (myNTwrite > myDgEndSlot) { myNTwrite = myDgStartSlot; }
+        if (myNTwrite > MyDgEndSlot) { myNTwrite = MyDgStartSlot; }
         /* DEBUG
         print("queueWrite:: Addr = ");
         print(addrToUse);
@@ -326,14 +339,29 @@ unsigned int  LD_QUE::writeQ(byte theLength, char theType)
         addrToUse++;
         // return calculated address as offset with the RAM - use this address to start writing the structure
         saveQ();
-        return(addrToUse);
-    } else {
-        return(setError(-10))
+        // now write the item to the FRAM
+        char myBuff[65];        // create a temp buffer
+        int i;                  //  copy the data into my temp buffer
+        for (i = 0; i < thelength; i++)
+        {
+            myBuff[i] = *(theData + i);
+        }
+        // write my temp buffer to the FRAM
+        noInterrupts();
+        fram.writeEnable(true);
+        fram.write(addrToUse, (uint8_t *)myBuff, myLen);
+        fram.writeEnable(false);
+        interrupts();
+        return(myLen);
+    } 
+    else 
+    {
+        return(setError(-22))
     }        
 }
 
 //  
-int LD_QUE::readQ(DEQUEUE_ITEM *myItem)
+byte LD_QUE::readQaddr(DEQUEUE_ITEM *myItem)
 {   
     setCurrFunction(6);
 
@@ -353,30 +381,32 @@ int LD_QUE::readQ(DEQUEUE_ITEM *myItem)
         // if ixReadNext = ixWriteNext AND count is zero, the Q is empty - return with -31
         if (myNTread == myNTwrite && myCountCurr == 0) 
         {
-            myItem->len = -31;
-            return(setError(-31));
+            myItem->len = -25;
+            return(setError(-25));
         }
         
         indexToUse = myNTread;  // check if the block is in use and return an error if it is
-        addrToUse =  (myDgStartSlot * myBlockSize) + (indexToUse * myBlockSize) - 1;
+        addrToUse =  (MyDgStartSlot * MyBlockSize) + (indexToUse * MyBlockSize) - 1;
         noInterrupts();
         inUse[0] = fram.read8(addrToUse);
+
         // check if it a bad block, and try to read past it if it is..
         while (inUse[0] == 'X') 
         {
             myNTread ++;
-            if (myNTread > myDgEndSlot) { myNTread = myDgStartSlot; }
+            if (myNTread > MyDgEndSlot) { myNTread = MyDgStartSlot; }
             indexToUse = myNTread;  // check if the block is in use and return an error if it is
-            addrToUse = (indexToUse * myBlockSize) - 1;
+            addrToUse = (indexToUse * MyBlockSize) - 1;
             inUse[0] = fram.read8(addrToUse);
             // now check it again
         }
         interrupts();
+
         // if it isnt a bad block, and the block is not in use, we cannot continue
         if (inUse[0] == 'N') 
         {
-            myItem->len = -32;
-            return(setError(-32));
+            myItem->len = -26;
+            return(setError(-26));
         }
 
         // must be 'Y'
@@ -410,17 +440,19 @@ int LD_QUE::readQ(DEQUEUE_ITEM *myItem)
         // increment the ixReadNext    
         myNTread ++;
         // if ixReadNext > ixMax then ixReadNext = 0;
-        if (myNTread > myDgEndSlot) { myNTread = myDgStartSlot; }
+        if (myNTread > MyDgEndSlot) { myNTread = MyDgStartSlot; }
 
         saveQ();
         return(myItem->len);  // return the type of the item, and the index to that type's queue so the caller can retrieve the item
-    } else {
-        return(setError(-10))
+    } 
+    else 
+    {
+        return(setError(-27))
     }
 }
 
 //  
-int LD_QUE::copyItem(uint16_t addr, char *buff, int len)
+byte LD_QUE::readItem(uint16_t addr, char *buff, int len)
 {
     setCurrFunction(7);
     if (isActive)
@@ -431,8 +463,10 @@ int LD_QUE::copyItem(uint16_t addr, char *buff, int len)
             *(buff + i) = fram.read8(addr + i);
         }
         return(i + 1);
-    } else {
-        return(setError(-10))
+    } 
+    else 
+    {
+        return(setError(-30))
     }
 }
 
@@ -442,8 +476,10 @@ byte LD_QUE::currItemCount()
     setCurrFunction(8);
     if (isActive)
     {   
-       return(myCountCurr);
-    } else {
-        return(setError(-10))
+        return(myCountCurr);
+    } 
+    else 
+    {
+        return(setError(-35))
     }
 }

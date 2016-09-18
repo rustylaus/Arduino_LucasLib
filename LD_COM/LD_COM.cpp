@@ -3,32 +3,22 @@
 /*
     LD_COM();
     ~LD_COM();
-    void (int theRxPort, int theTxPort, long thePortSpeed)
-    byte outputBuild(byte theLen);                                      // commOutputBld
-    int outputSend(char theType, int theLength);                         // commsBufferSend
-    void outputSendChar(char theChar);               // poss internal    // commsCharSend
-    int inputRecv(boolean discard = false);             // commsBufferGet
-    int tokenGetLen(int theOffset, int theLength);     // buffCharsGetLen
-    int tokenGetSep(int theOffset);                    // buffCharsGetSep
-    void setBufferOutput(byte theIX, char theChar);
-    char bufferOutput(byte theIX);
-    char token(byte theIX);
+    void commInit(int theRxPort, int theTxPort, long thePortSpeed);
+    byte outputInit(char *theBuffer, byte theMaxIX);
+    byte outputBuild(char *theSource, char *theBuff, byte theLen);                          // commOutputBld
+    byte outputFill(char *theSource, char *theBuff, byte theBuffOffset, byte theLength);
+    byte outputSend(char *thebuff, char theType, int theLength);                            // commsBufferSend
+    void outputSendChar(char theChar);                                  // poss internal    // commsCharSend
+    byte inputRecv(boolean discard = false);                                                // commsBufferGet
+    byte tokenGetLen(int theLength, int theOffset = 999);                                   // buffCharsGetLen
+    byte tokenGetSep(int theOffset = 999);                                                  // buffCharsGetSep
+    char tokenChar(byte theIX);
+    int tokenInt();
+    String tokenString();
     byte tokenLen();
     char dgType();
-    
-    //  The following is to be confirmed... may be duplicate to the above
-
-    // if WORK_IO is contained in class - we need functions to set/get variables
-    // what about the _commbuffers?
-
-    char type();
-    char input(byte theOffset);
-    char inputSet(byte theOffset, char theChar, byte theLen = 1);
-    char output(byte theOffset);
-    char outputSet(byte theOffset, char theChar, byte theLen = 1);
-    String token();
-    nextOffset
-
+    byte MaxToken();
+    byte MaxBuff();
 
 */
 
@@ -41,17 +31,13 @@ byte myBuffLen;           // The number of chars in the buffer
 char myToken[32];         // An area to extract information from a buffer
 byte myTokenLen;          // The number of chars in token (excluding MyNull)
 byte myNextOffset;        // The offset of the next byte to read from the buffer
-
-char myWorkValue[33];     // Need to check this is big enough for GPS values
-
-char myBufferOutput[65];
+byte myOutputMax = 0;
 byte myOutputIX = 0;
 byte myOC = 0;
 char myCommType = '*';
 
-const byte MaxToken = 31;
-const byte MaxBuff = 64;
-
+const byte MyMaxToken = 31;     // the maximum token IX
+const byte MyMaxBuff = 64;      // the maximum buffer IX
 
 //  Constructor
 LD_COM::LD_COM()
@@ -67,58 +53,134 @@ LD_COM::~LD_COM()
     /* nothing to do */
 }
 
-void LD_COM::initComm(int theRxPort, int theTxPort, long thePortSpeed)
+void LD_COM::commInit(int theRxPort, int theTxPort, long thePortSpeed)
 {
-
     setCurrFunction(3);
-
     SoftwareSerial xBee(theRxPort, theTxPort);
     xBee.begin(thePortSpeed);
     setActive(true);
-
 }
 
-void LD_COM::setBufferOutput(byte theIX, char theChar)
+byte LD_COM::inputLen()
 {
-    myBufferOutput[theIX] = theChar;
-}
-
-char LD_COM::bufferOutput(byte theIX)
-{
-    return(myBufferOutput[theIX]);
-}
-
-byte LD_COM::buffInputLen()
-{
+    setCurrFunction(4);
     return(myBuffLen);
 }
 
-char LD_COM::token(byte theIX)
+char LD_COM::tokenChar(byte theIX)
 {
+    setCurrFunction(5);
     return(myToken[theIX]);
+}
+
+int LD_COM::tokenInt()
+{
+    setCurrFunction(6);
+    return((String(myToken).toInt());
+}
+
+String LD_COM::tokenString()
+{   
+    setCurrFunction(7);
+    String s = "";
+    s.concat(myToken);
+    return(s);
 }
 
 byte LD_COM::tokenLen()
 {
+    setCurrFunction(8);
     return(myTokenLen);
 }
 
 byte LD_COM::dgType()
 {
+    setCurrFunction(9);
     return(myCommType);
 }
 
-byte LD_COM::outputBuild(byte theLen)                               // returns the number of bytes copied
+byte LD_COM::MaxBuff()
 {
-    setCurrFunction(4);
-    myOC = 0;
-    // check we do not overflow the buffer
-    memcpy(&myBufferOutput[myOutputIx], &myWorkValue, theLen);
-    myOutputIx += theLen;
-    return(theLen);
+    setCurrFunction(10);
+    return(MyMaxBuff);
 }
 
-int LD_COM::outputSend(char theType, int theLength)
+byte LD_COM::MaxToken()
+{
+    setCurrFunction(11);
+    return(myMaxToken);
+}
+
+byte LD_COM::outputInit(char *theBuffer, byte theMaxIX)
+// also initialises the 
+// returns the length of the buffer as confirmation, or an error (<0)
+{
+    int i;
+    setCurrFunction(12);
+
+    if (theMaxIX > MyMaxBuff)
+    {
+        return(setError(-10));
+    }
+    else
+    {
+        myOutputMax = theMaxIX;
+        for (i = 0; i < (myOutputMax + 1); i++)
+        {
+            *(theBuffer + i) = MyNull;
+        }
+        myOutputIX = 0;
+        return(theMaxIX);
+    }
+}
+
+byte LD_COM::outputFill(char *theSource, char *theBuff, byte theBuffOffset, byte theLength)
+// This does a straight copy of the theSource to the output buffer after some checking
+{
+    byte i;
+    setCurrFunction(13);
+
+    // if the device is active...
+    if (isActive)
+    {   
+        // check we would not go past the end of the buffer
+        if ((theBuffOffset + theLength) > (myOutputMax + 1))
+        {
+            // would extend past end of buffer
+            return(setError(-15));
+        }
+        else
+        {   // all good - go do the copy
+            for (i = 0; i < theLength; i++)
+            {
+                *(theBuff + theOffset + i) = *(theSource + i);
+            }
+            // return the bytes copied
+            return(i + 1);
+        }
+
+    } 
+    else 
+    {
+        return(setError(-16));
+    }
+}
+
+byte LD_COM::outputBuild(char *theSource, char *theBuff, byte theLen)
+// This does a copy of the source to the output buffer, but also maintains an index of where the next available 
+// byte is located in the buffer - returns the number of bytes copied
+{
+    setCurrFunction(14);
+    myOC = 0;
+    // go fill the output buffer after checking it will not overflow
+    myOC = outputFill(theSource, theBuff, myOutputIX, theLen);  // returns an error (<0) or the number of bytes copied
+    //memcpy(&myBufferOutput[myOutputIx], &myWorkValue, theLen);
+    // of successful, increment the index by the bytes copied
+    if (myOC > 0) { myOutputIx += myOC; };
+    return(myOC);
+}
+
+byte LD_COM::outputSend(char *thebuff, char theType, byte theLength)
 //  theLength is the length of the contents in bufferOutput, not the entire length of the datagram.  We will calculate the latter.
 {
     int i;
@@ -128,7 +190,7 @@ int LD_COM::outputSend(char theType, int theLength)
     
     char lenF[4];
     
-    setCurrFunction(5);
+    setCurrFunction(15);
     myOC = 0;
 
     if (isActive())
@@ -136,8 +198,9 @@ int LD_COM::outputSend(char theType, int theLength)
         // find out how many fields there are by summing the number of NULLs in bufferOutput
         for (i=0; i < theLength; i++) 
         {
-            if (myBufferOutput[i] == '\0') {
-            j ++;
+            if (*(theBuff + i) == '\0') 
+            {
+                j ++;
             }
         }
 
@@ -173,8 +236,8 @@ int LD_COM::outputSend(char theType, int theLength)
         // output the buffer - look for \0 and output DgSep & \0 after it
         for (i=0; i < theLength; i++) 
         {
-            outputSendChar(myBufferOutput[i]);
-            if (myBufferOutput[i] == '\0') 
+            outputSendChar(*(theBuff + i));
+            if (*(theBuff + i) == '\0') 
             {
                 outputSendChar(DgSep);
                 outputSendChar(MyNull);
@@ -187,10 +250,11 @@ int LD_COM::outputSend(char theType, int theLength)
         //if (_logComms) { _ser.print("'==>>>", true); }
         interrupts();
         myOC = j;
-    } else
+    } 
+    else
     {
         // what happens if not active?
-        myOC = -60
+        myOC = -20
         setError(myOC,false);
     }
     return(myOC);
@@ -198,7 +262,7 @@ int LD_COM::outputSend(char theType, int theLength)
 
 void LD_COM::outputSendChar(char theChar) 
 {
-    setCurrFunction(6);
+    setCurrFunction(16);
     myOC = 0;
     xBee.write(theChar);
     //if (_logComms) { _ser.print(theChar); }
@@ -225,13 +289,13 @@ int LD_COM::inputRecv(boolean theDiscard = false)
     int c = 0;
     char valueF[4];
     String strVal = StrNull;
-    char bufferInput[65];   // this is only used by this routine.
+    char bufferInput[65];   // only used by this routine - the output is placed in myBuff
 
-    setCurrFunction(7);
+    setCurrFunction(17);
     myOC = 0;
     _ser.print("!", true);
 
-    for (i = 0; i < MaxBuff; i++) 
+    for (i = 0; i < MyMaxBuff; i++) 
     {
         bufferInput[i] = MyNull;
         myBuff[i] = MyNull;
@@ -245,7 +309,7 @@ int LD_COM::inputRecv(boolean theDiscard = false)
         //if (_logComms) { _ser.print("CommsGet: <<<=='"); }
         //_ser.print(">", false);
         //delay(500);
-        while (commChar != DgEnd && i < MaxBuff)        // We could loop for-ever here waiting for the end sentinel - may need a circuit breaker in case of comms error
+        while (commChar != DgEnd && i < MyMaxBuff)        // We could loop for-ever here waiting for the end sentinel - may need a circuit breaker in case of comms error
         {                                            
             c = xBee.available();
             //_ser.print(c);
@@ -269,7 +333,8 @@ int LD_COM::inputRecv(boolean theDiscard = false)
                     i++;
                 }
                 if (!theDiscard && commChar == DgStart) { foundStart = true; }
-            } else 
+            } 
+            else 
             {
                 // there were no chars - if this is a discard scenario - then that is fine - we exit.
                 if (theDiscard) { commChar = DgEnd; }
@@ -280,7 +345,7 @@ int LD_COM::inputRecv(boolean theDiscard = false)
         //_ser.print(i, true);
         _ser.print(" ",true);
         
-        if (i < MaxBuff) 
+        if (i < MyMaxBuff) 
         {
             if (!theDiscard) 
             {
@@ -301,7 +366,8 @@ int LD_COM::inputRecv(boolean theDiscard = false)
                     // let the controller know the datagram was invalid
                     ackResInvSend(DgTypeInvalid);
                     myOC = -72;        // bad length
-                } else 
+                } 
+                else 
                 {
                     // the length was good!
                     // Next, get the comms type and load it into _commType
@@ -315,37 +381,44 @@ int LD_COM::inputRecv(boolean theDiscard = false)
                     // set the outcome to equal the length of the buffer
                     myOC = myBuffLen;
                 }
-            } else 
+            } 
+            else 
             {
                 myOC = 0;
             } 
-        } else 
+        } 
+        else 
         {
             //*ioWork->buffLen = 0;
-            myOC = -71;            // buffer overflow - no full message can be greater than 128 chars
+            myOC = -30;            // buffer overflow - no full message can be greater than 128 chars
         }
         myNextOffset = 0;
         //interrupts();
-    } else {
-        myOC = -70; 
+    } 
+    else 
+    {
+        myOC = -31; 
     }
+
     if (myOC < 0) { setError(myOC, false); }
     return(myOC);
 }
 
-int LD_COM::tokenGetLen(int theOffset, int theLength) 
+int LD_COM::tokenGetLen(int theLength, int theOffset = 999) 
 {
 
     byte i;
 
-    setCurrFunction(8);
+    setCurrFunction(18);
     myOC = 0;
 
+    if (theOffset == 999) { theOffset = myNextOffset; }
+
     // check we are not asking for something beyond the end of the buffer
-    if ((theLength < (MaxToken)) && ((theOffset + theLength) < (myBuffLen + 1))) 
+    if ((theLength < (MyMaxToken)) && ((theOffset + theLength) < (myBuffLen + 1))) 
     {
         // initialise output buffer (token) with nulls
-        for (i=0; i<(MaxToken); i++) 
+        for (i=0; i<(MyMaxToken); i++) 
         {
             myToken[i] = MyNull;
         }
@@ -378,30 +451,34 @@ int LD_COM::tokenGetLen(int theOffset, int theLength)
         //
         // return with number of characters in string
         return (i);
-    } else 
+    } 
+    else 
     {
         // error - exceeded max output buffer length
-        setError(-73, false);
-        return (-73);
+        setError(-35, false);
+        return (-35);
     }
 }
 
-int LD_COM::tokenGetSep(int theOffset) 
+int LD_COM::tokenGetSep(int theOffset = 999) 
+// uses the internal offset for starting position if TheOffset = 999
 {
     byte i;
 
-    setCurrFunction(9);
+    setCurrFunction(19);
     myOC = 0;
     
+    if (theOffset == 999) { theOffset = myNextOffset; }
+
     // initialise output buffer (token) with nulls
-    for (i=0; i<(MaxToken); i++) 
+    for (i = 0; i < MyMaxToken; i++) 
     {
         myToken[i] = MyNull;
     }
     
     // copy chars up to the separator
-    i=0;
-    while ( myBuff[(theOffset + i)] != DgSep && ((theOffset + i) < (myBuffLen + 1)) && (i < MaxToken) ) 
+    i = 0;
+    while ( myBuff[(theOffset + i)] != DgSep && ((theOffset + i) < (myBuffLen + 1)) && (i < MyMaxToken) ) 
     {
         myToken[i] = myBuff[(theOffset + i)];
         i++;

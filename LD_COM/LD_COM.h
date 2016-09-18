@@ -10,24 +10,32 @@
 #include <Arduino.h>
 #include "LD_SER.h"
 
+const char DgStart = '{';
+const char DgEnd = '}';
+const char DgSep = '|';
+
 class LD_COM_H : public LD_SER
 {
     
 public:
     LD_COM();
     ~LD_COM();
-    void initComm(int theRxPort, int theTxPort, long thePortSpeed);
-    byte outputBuild(byte theLen);                                      // commOutputBld
-    int outputSend(char theType, int theLength);                         // commsBufferSend
+    void commInit(int theRxPort, int theTxPort, long thePortSpeed);
+    byte outputInit(char *theBuffer, byte theMaxIX);
+    byte outputBuild(char *theSource, char *theBuff, byte theLen);      // commOutputBld
+    byte outputFill(char *theSource, char *theBuff, byte theBuffOffset, byte theLength);
+    byte outputSend(char *thebuff, char theType, int theLength);                         // commsBufferSend
     void outputSendChar(char theChar);               // poss internal    // commsCharSend
-    int inputRecv(boolean discard = false);                             // commsBufferGet
-    int tokenGetLen(int theOffset, int theLength);                      // buffCharsGetLen
-    int tokenGetSep();                                                  // buffCharsGetSep
-    void setBufferOutput(byte theIX, char theChar);
-    char bufferOutput(byte theIX);
-    char token(byte theIX);
+    byte inputRecv(boolean discard = false);             // commsBufferGet
+    byte tokenGetLen(int theLength, int theOffset = 999);     // buffCharsGetLen
+    byte tokenGetSep(int theOffset = 999);                    // buffCharsGetSep
+    char tokenChar(byte theIX);
+    int tokenInt();
+    String tokenString();
     byte tokenLen();
     char dgType();
+    byte MaxToken();
+    byte MaxBuff();
 
 }
 

@@ -13,9 +13,9 @@
     boolean isEnabled();                          // returns whether the device is enabled
     void setActive(boolean isActive);             // sets the active status
     boolean isActive();                           // returns whether the device is active
-    void setError(byte theFunction = 0, int theError = -999, boolean forceReportErrorSerial = false);               // indicates a new error
+    byte setError(byte theError);               // indicates a new error
     boolean newError();                           // Indicates if a new error has just occurred
-    byte error(byte theIndex = 0);             // returns the error indicated by theIndex, the latest error being the default
+    byte error(byte theIndex = 0);   
 */
 
 byte myDeviceNumber = 0;
@@ -96,7 +96,7 @@ boolean LD_DEV::isActive()
 }
 
 //  Indicates a new error
-byte LD_DEV::setError(byte theError, boolean forceReportErrorSerial = false)
+byte LD_DEV::setError(byte theError)
 {
     // Update the structure first
     myError[2] = myError[1];
@@ -105,17 +105,6 @@ byte LD_DEV::setError(byte theError, boolean forceReportErrorSerial = false)
 
     myNewError = true;
 
-    //
-    //  THE FOLLOWING CODE NEEDS REVIEW - my current function and unit should indicate location of error
-    //
-
-    if (forceReportErrorSerial) 
-    {  // if this is set to true, it will not try to send an Error dialog, it will just try to send out of the serial port (if available).
-        msgReportSerial(myFunc, "Report Err");
-    } else {
-        // this will not work - errSend is not in scope
-        errSend(theDevice, theFunction, theMethod, theError);
-    }
     return(theError);
 }
 

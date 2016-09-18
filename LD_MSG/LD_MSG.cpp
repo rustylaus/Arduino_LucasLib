@@ -6,7 +6,7 @@
     void init(byte theUnit);
     void setVerbose(boolean isVerbose);
     boolean isVerbose();
-    void setMessage(String theObject, int theMsgNo);
+    void newMessage(String theObject, int theMsgNo);
     void addValue(String theString);
     void addValue(int theInt, byte theLen = 4);
 */
@@ -53,12 +53,14 @@ void LD_MSG::init(String theUnit)
 //  Sets the verbose setting
 void LD_MSG::setVerbose(boolean isVerbose)
 {   
+    setCurrFunction(4);
     myVerbose = isVerbose;
 }
 
 // retrieves the current verbose setting
 boolean LD_MSG::isVerbose()
 {   
+    setCurrFunction(5);
     return(myVerbose);
 }
 
@@ -67,7 +69,7 @@ void LD_MSG::newMessage(String theOriginator, int theMsgNo)
 {   
     char myValue[4];
 
-    setCurrFunction(4);
+    setCurrFunction(6);
     if (isActive) 
     {
         myOriginator = theOriginator;
@@ -81,23 +83,25 @@ void LD_MSG::newMessage(String theOriginator, int theMsgNo)
 //  Print an integer to the serial port, optionally as DEC
 void LD_MSG::addValue(String theString)
 {
-    setCurrFunction(5);
+    setCurrFunction(7);
     if (isActive)
     {   
         // we do need a check to ensure the token length does not exceed the max message length
         if ( (myUnit.len() + myObject.len() + myMsgNo.len() + myTokenValue() + theString.len()) > MessageMax)
         {
-            setError(-1);
-        } else
+            setError(-10);
+        } 
+        else
         {
             if (tokenCount < MsgTokenMaxIX)
             {
                 myTokenValue.concat(theString);
                 myTokenValue.concat(MsgValueSep);
                 tokenCount ++;
-            } else
+            } 
+            else
             {
-                setError(-2);
+                setError(-11);
             }
         }
     }
@@ -108,23 +112,25 @@ void LD_MSG::addValue(int theInt, char theFormat[5] = Fmt4u)
 {
     char myValue[5];
 
-    setCurrFunction(6);
+    setCurrFunction(8);
     if (isActive)
     {
         sprintf(myValue, Fmt4u, theInt);
         if ( (myUnit.len() + myObject.len() + myMsgNo.len() + myTokenValue() + theString.len()) > MessageMax)
         {
-            setError(-1);
-        } else
+            setError(-15);
+        } 
+        else
         {
             if (tokenCount < MsgTokenMaxIX)
             {
                 myTokenValue.concat(myCurrValue);
                 myTokenValue.concat(MsgValueSep);
                 tokenCount ++;
-            } else
+            } 
+            else
             {
-                setError(-2);
+                setError(-16);
             }
         }
     }

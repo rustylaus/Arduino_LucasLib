@@ -12,6 +12,13 @@
 
 #define ErrorArraySize 3
 
+// Device Enabled Values
+const byte DevEnableOn = 1;
+const byte DevEnableOff = 0;
+// Device Status Values
+const byte DevStatOff = 0;
+const byte DevStatOn = 1;
+
 class LD_DEV 
 {
     
@@ -28,7 +35,7 @@ public:
     boolean isEnabled();                          // returns whether the device is enabled
     void setActive(boolean isActive);             // sets the active status
     boolean isActive();                           // returns whether the device is active
-    byte setError(byte theError, boolean forceReportErrorSerial = false);               // indicates a new error
+    byte setError(byte theError);               // indicates a new error
     boolean newError();                           // Indicates if a new error has just occurred
     byte error(byte theIndex = 0);             // returns the error indicated by theIndex, the latest error being the default
  }
