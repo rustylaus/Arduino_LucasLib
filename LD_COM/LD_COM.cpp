@@ -1,15 +1,17 @@
-#include "C:\Users\Russell\SkyDrive\_Dev\LD_Libraries\LD_COM\LD_COM.h"
+#include <LD_COM.h>
 
 /*
-    LD_COM();
+    LD_COM(int theRxPort, int theTxPort);
     ~LD_COM();
-    void commInit(int theRxPort, int theTxPort, long thePortSpeed);
+    void commInit(long thePortSpeed);
     byte outputInit(char *theBuffer, byte theMaxIX);
     byte outputBuild(char *theSource, char *theBuff, byte theLen);                          // commOutputBld
     byte outputFill(char *theSource, char *theBuff, byte theBuffOffset, byte theLength);
-    byte outputSend(char *thebuff, char theType, int theLength);                            // commsBufferSend
+    byte outputSend(char *theBuff, char theType, byte theLength);                           // commsBufferSend
     void outputSendChar(char theChar);                                  // poss internal    // commsCharSend
+    int inputAvailable();
     byte inputRecv(boolean discard = false);                                                // commsBufferGet
+    byte inputLen();
     byte tokenGetLen(int theLength, int theOffset = 999);                                   // buffCharsGetLen
     byte tokenGetSep(int theOffset = 999);                                                  // buffCharsGetSep
     char tokenChar(byte theIX);
@@ -19,12 +21,11 @@
     char dgType();
     byte MaxToken();
     byte MaxBuff();
-
 */
 
 const byte DeviceComms = 4;
 
-SoftwareSerial xBee;
+//SoftwareSerial xBee();
 
 char myBuff[65];          // Area to read I/O chars into from a device
 byte myBuffLen;           // The number of chars in the buffer
@@ -40,7 +41,8 @@ const byte MyMaxToken = 31;     // the maximum token IX
 const byte MyMaxBuff = 64;      // the maximum buffer IX
 
 //  Constructor
-LD_COM::LD_COM()
+LD_COM::LD_COM(int theRxPort, int theTxPort)
+    : xBee(theRxPort, theTxPort)
 {
     setDevice(DeviceComms);           // See other devices
     setCurrFunction(1);
@@ -53,10 +55,10 @@ LD_COM::~LD_COM()
     /* nothing to do */
 }
 
-void LD_COM::commInit(int theRxPort, int theTxPort, long thePortSpeed)
+void LD_COM::commInit(long thePortSpeed)
 {
     setCurrFunction(3);
-    SoftwareSerial xBee(theRxPort, theTxPort);
+    //xBee = SoftwareSerial xBee(theRxPort, theTxPort);
     xBee.begin(thePortSpeed);
     setActive(true);
 }
@@ -76,7 +78,7 @@ char LD_COM::tokenChar(byte theIX)
 int LD_COM::tokenInt()
 {
     setCurrFunction(6);
-    return((String(myToken).toInt());
+    return((String(myToken).toInt()));
 }
 
 String LD_COM::tokenString()
@@ -93,7 +95,7 @@ byte LD_COM::tokenLen()
     return(myTokenLen);
 }
 
-byte LD_COM::dgType()
+char LD_COM::dgType()
 {
     setCurrFunction(9);
     return(myCommType);
@@ -108,7 +110,7 @@ byte LD_COM::MaxBuff()
 byte LD_COM::MaxToken()
 {
     setCurrFunction(11);
-    return(myMaxToken);
+    return(MyMaxToken);
 }
 
 byte LD_COM::outputInit(char *theBuffer, byte theMaxIX)
@@ -141,7 +143,7 @@ byte LD_COM::outputFill(char *theSource, char *theBuff, byte theBuffOffset, byte
     setCurrFunction(13);
 
     // if the device is active...
-    if (isActive)
+    if (isActive())
     {   
         // check we would not go past the end of the buffer
         if ((theBuffOffset + theLength) > (myOutputMax + 1))
@@ -153,7 +155,7 @@ byte LD_COM::outputFill(char *theSource, char *theBuff, byte theBuffOffset, byte
         {   // all good - go do the copy
             for (i = 0; i < theLength; i++)
             {
-                *(theBuff + theOffset + i) = *(theSource + i);
+                *(theBuff + theBuffOffset + i) = *(theSource + i);
             }
             // return the bytes copied
             return(i + 1);
@@ -176,11 +178,11 @@ byte LD_COM::outputBuild(char *theSource, char *theBuff, byte theLen)
     myOC = outputFill(theSource, theBuff, myOutputIX, theLen);  // returns an error (<0) or the number of bytes copied
     //memcpy(&myBufferOutput[myOutputIx], &myWorkValue, theLen);
     // of successful, increment the index by the bytes copied
-    if (myOC > 0) { myOutputIx += myOC; };
+    if (myOC > 0) { myOutputIX += myOC; };
     return(myOC);
 }
 
-byte LD_COM::outputSend(char *thebuff, char theType, byte theLength)
+byte LD_COM::outputSend(char *theBuff, char theType, byte theLength)
 //  theLength is the length of the contents in bufferOutput, not the entire length of the datagram.  We will calculate the latter.
 {
     int i;
@@ -254,8 +256,8 @@ byte LD_COM::outputSend(char *thebuff, char theType, byte theLength)
     else
     {
         // what happens if not active?
-        myOC = -20
-        setError(myOC,false);
+        myOC = -20;
+        setError(myOC);
     }
     return(myOC);
 }
@@ -268,7 +270,14 @@ void LD_COM::outputSendChar(char theChar)
     //if (_logComms) { _ser.print(theChar); }
 }
 
-int LD_COM::inputRecv(boolean theDiscard = false) 
+int LD_COM::inputAvailable()
+{
+    setCurrFunction(16);
+    myOC = 0;
+    return(xBee.available());
+}
+
+byte LD_COM::inputRecv(boolean theDiscard) 
 {
 
     // A valid datagram has the format
@@ -293,7 +302,7 @@ int LD_COM::inputRecv(boolean theDiscard = false)
 
     setCurrFunction(17);
     myOC = 0;
-    _ser.print("!", true);
+    print("!", true);
 
     for (i = 0; i < MyMaxBuff; i++) 
     {
@@ -316,10 +325,10 @@ int LD_COM::inputRecv(boolean theDiscard = false)
             //delay(2000);
             if (c > 0) 
             {
-                _ser.print(".", false);
+                print(".", false);
                 //delay(100);
                 commChar = xBee.read();                                              // Receive a single character from the software serial port
-                _ser.print(commChar, false);
+                print(commChar, false);
                 /*
                 if (_logComms) {
                 _ser.print(_commChar);
@@ -343,7 +352,7 @@ int LD_COM::inputRecv(boolean theDiscard = false)
         //if (_logComms) { _ser.print("'."); }
         //_ser.print("<");
         //_ser.print(i, true);
-        _ser.print(" ",true);
+        print(" ",true);
         
         if (i < MyMaxBuff) 
         {
@@ -364,7 +373,7 @@ int LD_COM::inputRecv(boolean theDiscard = false)
                 if ( (i-5) != myBuffLen ) 
                 {
                     // let the controller know the datagram was invalid
-                    ackResInvSend(DgTypeInvalid);
+                    //ackResInvSend(DgTypeInvalid);
                     myOC = -72;        // bad length
                 } 
                 else 
@@ -400,11 +409,11 @@ int LD_COM::inputRecv(boolean theDiscard = false)
         myOC = -31; 
     }
 
-    if (myOC < 0) { setError(myOC, false); }
+    if (myOC < 0) { setError(myOC); }
     return(myOC);
 }
 
-int LD_COM::tokenGetLen(int theLength, int theOffset = 999) 
+byte LD_COM::tokenGetLen(int theLength, int theOffset) 
 {
 
     byte i;
@@ -455,12 +464,12 @@ int LD_COM::tokenGetLen(int theLength, int theOffset = 999)
     else 
     {
         // error - exceeded max output buffer length
-        setError(-35, false);
+        setError(-35);
         return (-35);
     }
 }
 
-int LD_COM::tokenGetSep(int theOffset = 999) 
+byte LD_COM::tokenGetSep(int theOffset) 
 // uses the internal offset for starting position if TheOffset = 999
 {
     byte i;

@@ -1,14 +1,15 @@
-#include "C:\Users\Russell\SkyDrive\_Dev\LD_Libraries\LD_SER\LD_SER.h"
+#include <LD_SER.h>
 
 /*
-    LD_SER();               // Constructor
-    ~LD_SER();              // De-Constructor
+    LD_SER();                                                                           // Constructor
+    ~LD_SER();                                                                          // De-Constructor
     void initPort(long thePortSpeed);
-    void print(String theString, boolean newLine = false);                          // Prints a String
-    void print(int theInt, boolean newLine = false, boolean isDec = false);         // Prints an integer, optionally as DEC
-    void print(char theChar, boolean newLine = false, boolean isHex = false);       // Prints a char, optionally as HEX
-    void printArray(char *theChar, int theLen);                                     // Prints char array for specified length
-    void printStat(String theString, int theStatus);                                // Prints standard status message
+    void print(String theString, boolean newLine = false);                              // Prints a String
+    void print(int theInt, boolean newLine = false, boolean isDec = false);             // Prints an integer, optionally as DEC
+    void print(unsigned int theInt, boolean newLine = false, boolean isDec = false);    // Prints an unsigned integer, optionally as DEC
+    void print(char theChar, boolean newLine = false, boolean isHex = false);           // Prints a char, optionally as HEX
+    void printArray(char *theChar, int theLen, boolean isHex = false);                  // Prints char array for specified length
+    void printStat(String theString, int theStatus);                                    // Prints standard status message
 */
 
 const byte DeviceSerial = 1;
@@ -31,7 +32,7 @@ void LD_SER::initPort(long thePortSpeed)
 {
     setCurrFunction(3);
     // check that I am enabled first
-    if (isEnabled)
+    if (isEnabled())
     {
         Serial.begin(thePortSpeed);
         while (!Serial) 
@@ -48,10 +49,11 @@ void LD_SER::initPort(long thePortSpeed)
 }
 
 //  Print a string to the serial port
-void LD_SER::print(String theString, boolean newLine = false)
+void LD_SER::print(String theString, boolean newLine)
+//  default:= newLine = false
 {
     setCurrFunction(4);
-    if (isActive) 
+    if (isActive()) 
     {
         if (newLine) 
         {
@@ -65,10 +67,41 @@ void LD_SER::print(String theString, boolean newLine = false)
 }
 
 //  Print an integer to the serial port, optionally as DEC
-void LD_SER::print(int theInt, boolean newLine = false, boolean isDec = false)
+void LD_SER::print(int theInt, boolean newLine, boolean isDec)
+// default:= newLine = false, isDec = false
 {
     setCurrFunction(5);
-    if (isActive)
+    if (isActive())
+    {
+        if (newLine) 
+        {
+            if (isDec)
+            {
+                Serial.println(theInt, DEC);
+            } else
+            {
+                Serial.println(theInt);
+            }
+        } else 
+        {
+            if (isDec)
+            {
+                Serial.print(theInt, DEC);                
+            } else
+            {
+                Serial.print(theInt);
+            }
+        }
+        delay(10); 
+    }
+}
+
+//  Print an unsigned integer to the serial port, optionally as DEC
+void LD_SER::print(unsigned int theInt, boolean newLine, boolean isDec)
+// default:= newLine = false, isDec = false
+{
+    setCurrFunction(6);
+    if (isActive())
     {
         if (newLine) 
         {
@@ -94,10 +127,11 @@ void LD_SER::print(int theInt, boolean newLine = false, boolean isDec = false)
 }
 
 //  Print a character to the serial port, optionally as HEX
-void LD_SER::print(char theChar, boolean newLine = false, boolean isHex = false)
+void LD_SER::print(char theChar, boolean newLine, boolean isHex)
+// default:= newLine = false, isDec = false
 {
-    setCurrFunction(6);
-    if (isActive)
+    setCurrFunction(7);
+    if (isActive())
     {
         if (newLine) 
         {
@@ -123,10 +157,11 @@ void LD_SER::print(char theChar, boolean newLine = false, boolean isHex = false)
 }
 
 //  Print a char array to the serial port for the specified length
-void LD_SER::printArray(char *theChar, int theLen, boolean isHex = false)
+void LD_SER::printArray(char *theChar, int theLen, boolean isHex)
+//  default:= isHex = false
 {
-    setCurrFunction(7);
-    if (isActive)
+    setCurrFunction(8);
+    if (isActive())
     {
         int i;
         for (i = 0; i < theLen; i++) 
@@ -140,8 +175,8 @@ void LD_SER::printArray(char *theChar, int theLen, boolean isHex = false)
 //  Print a standard status message
 void LD_SER::printStat(String theString, int theStatus)
 {
-    setCurrFunction(8);
-    if (isActive) 
+    setCurrFunction(9);
+    if (isActive()) 
     {
         Serial.print("INFO> ");
         Serial.print(theString);

@@ -1,16 +1,24 @@
-#include "C:\Users\Russell\SkyDrive\_Dev\LD_Libraries\LD_QUE\LD_QUE.h"
+#include <LD_QUE.h>
 
 /*
-    LD_QUE();
+    LD_QUE(int RAMport);
     ~LD_QUE();
-    byte initQ(int RAMport, boolean fullInit = false)                                        // returns bad blocks found in FRAM
-    void saveQ();
+    byte initQ(boolean fullInit = false);                           // returns bad blocks found in FRAM
+    byte saveQ();
     byte currItemCount();
     byte writeQitem(char *theData, byte theLength, char theType);
     byte readQaddr(DEQUEUE_ITEM *myItem);
-    byte readItem(uint16_t addr, char *buff, int len);  // copies the item from the RAM address into the buffer for the 
-                                                        // specified length, & returns length of item copied.
-                                                        // NB: readQ returns the address in DEQUEUE_ITEM->addr                
+    byte readItem(uint16_t addr, char *buff, int len);              // copies the item from the RAM address into the buffer for the 
+                                                                    // specified length, & returns length of item copied.
+                                                                    // NB: readQ returns the address in DEQUEUE_ITEM->addr                
+    int NTwrite();                                                  // Next to write - zero relative slot number
+    int NTread();                                                   // Next to read - relative slot number
+    byte CountCurr();                                               // Number of items in the buffer
+    byte CountCurrMax();                                            // Maximum items ever Qd in the buffer this run
+    byte CountOverflow();                                           // The number of times the buffer has been full
+    int CountQd();                                                  // The number of items that has been queued in the buffer
+    int CountDeQd();                                                // The number of items that have been dequeued in the buffer
+    byte NoSlots();                                                 // The maximum number of available slots in the queue          
 */
 
 const byte DeviceQueue = 3;
@@ -31,15 +39,15 @@ const int MyDgEndSlot = 101;
 const byte MyNoSlots = 100; 
 const byte MyBlockSize = 69;
 
-//  FRAM Extended memory
-Adafruit_FRAM_SPI fram; //= Adafruit_FRAM_SPI(SPIportSelectFRAM); 
 int myRAMport = 0;
 
 //  Constructor
-LD_QUE::LD_QUE()
+LD_QUE::LD_QUE(int RAMport)
+    : fram(RAMport)
 {
     setDevice(DeviceQueue);
     setCurrFunction(1);
+    myRAMport = RAMport;
     setEnabled(true);
 }
 
@@ -50,13 +58,51 @@ LD_QUE::~LD_QUE()
     /* nothing to do */
 }
 
+int LD_QUE::NTwrite()
+{
+    return(myNTwrite);
+}
+
+int LD_QUE::NTread()
+{
+    return(myNTread);
+}
+
+byte LD_QUE::CountCurr()
+{
+    return(myCountCurr);
+}
+
+byte LD_QUE::CountCurrMax()
+{
+    return(myCountCurrMax);
+}
+
+byte LD_QUE::CountOverflow()
+{
+    return(myCountOverflow);
+}
+
+int LD_QUE::CountQd()
+{
+    return(myCountQd);
+}
+
+int LD_QUE::CountDeQd()
+{
+    return(myCountDeQd);
+}
+
+byte LD_QUE::NoSlots()
+{
+    return(MyNoSlots);
+}
+
 //  Queue initialisation - returns the number of bad blocks
-byte LD_QUE::initQ(int RAMport, boolean fullInit = false)
+byte LD_QUE::initQ(boolean fullInit)
 {
 
     setCurrFunction(3);
-    myRAMport = RAMport;
-    fram = Adafruit_FRAM_SPI(myRAMport);
 
     if (fram.begin()) 
     {  
@@ -66,7 +112,7 @@ byte LD_QUE::initQ(int RAMport, boolean fullInit = false)
     else 
     {
         //_ser.print("No SPI FRAM found ... check your connections\r\n", true);
-        setError(-11, false);
+        setError(-11);
         while (true) { ; }
     }
 
@@ -130,7 +176,7 @@ byte LD_QUE::initQ(int RAMport, boolean fullInit = false)
             if (myValue[0] == 'N') 
             {
                 addrToUse ++;
-                copyItem(addrToUse, &myValue[0], 3);
+                readItem(addrToUse, &myValue[0], 3);
                 myValue[3] = '\0';
                 strVal = StrNull;
                 strVal.concat(myValue);
@@ -142,7 +188,7 @@ byte LD_QUE::initQ(int RAMport, boolean fullInit = false)
                     if (myValue[0] == 'N') 
                     {
                         addrToUse ++;
-                        copyItem(addrToUse, &initBuffIn[0], (CommBufferMax + 1));
+                        readItem(addrToUse, &initBuffIn[0], (InitBuffMax + 1));
                         for (j = 0; j < 123; j++) 
                         {
                             if (initBuffIn[j] != initBuffOut[j]) { isOK = false; }
@@ -177,12 +223,12 @@ byte LD_QUE::initQ(int RAMport, boolean fullInit = false)
 }
 
 //  Saves the Queue header to non-volatile storage
-void LD_QUE::saveQ()
+byte LD_QUE::saveQ()
 {   
     setCurrFunction(4);
     uint16_t addr = MyHeaderSlot;
 
-    if (isActive) 
+    if (isActive()) 
     {
         char myValue[5] = "QHDR";
         fram.writeEnable(true);
@@ -236,7 +282,7 @@ void LD_QUE::saveQ()
     } 
     else 
     {
-        return(setError(-15))
+        return(setError(-15));
     }
 }
 
@@ -264,10 +310,10 @@ byte LD_QUE::writeQitem(char *theData, byte theLength, char theType)
     char myType[2];
     myType[0] = theType;
 
-    if (isActive) 
+    if (isActive()) 
     {
         // check the length parm
-        if (theLength < 1 || (theLength + RAMoverhead) > MyBlockSize) { (return(setError(-21)); }
+        if (theLength < 1 || (theLength + RAMoverhead) > MyBlockSize) { return(setError(-21)); }
 
         // if ixWriteNext = ixReadNext AND count of items not zero, then Q is full - increment countQfull & exit with -22
         if (myNTwrite == myNTread && myCountCurr > 0) 
@@ -342,21 +388,21 @@ byte LD_QUE::writeQitem(char *theData, byte theLength, char theType)
         // now write the item to the FRAM
         char myBuff[65];        // create a temp buffer
         int i;                  //  copy the data into my temp buffer
-        for (i = 0; i < thelength; i++)
+        for (i = 0; i < theLength; i++)
         {
             myBuff[i] = *(theData + i);
         }
         // write my temp buffer to the FRAM
         noInterrupts();
         fram.writeEnable(true);
-        fram.write(addrToUse, (uint8_t *)myBuff, myLen);
+        fram.write(addrToUse, (uint8_t *)myBuff, theLength);
         fram.writeEnable(false);
         interrupts();
-        return(myLen);
+        return(theLength);
     } 
     else 
     {
-        return(setError(-22))
+        return(setError(-22));
     }        
 }
 
@@ -365,7 +411,7 @@ byte LD_QUE::readQaddr(DEQUEUE_ITEM *myItem)
 {   
     setCurrFunction(6);
 
-    if (isActive) 
+    if (isActive()) 
     {
         byte indexToUse;
         char typeToUse;
@@ -420,7 +466,7 @@ byte LD_QUE::readQaddr(DEQUEUE_ITEM *myItem)
         addrToUse++;
 
         // retrieve and store the stream length
-        copyItem(addrToUse, &myValue[0], 3);
+        readItem(addrToUse, &myValue[0], 3);
         myValue[4] = MyNull;
         strVal = StrNull;
         strVal.concat(myValue);
@@ -447,7 +493,7 @@ byte LD_QUE::readQaddr(DEQUEUE_ITEM *myItem)
     } 
     else 
     {
-        return(setError(-27))
+        return(setError(-27));
     }
 }
 
@@ -455,7 +501,7 @@ byte LD_QUE::readQaddr(DEQUEUE_ITEM *myItem)
 byte LD_QUE::readItem(uint16_t addr, char *buff, int len)
 {
     setCurrFunction(7);
-    if (isActive)
+    if (isActive())
     {   
         int i;
         for (i = 0; i < len; i++)
@@ -466,7 +512,7 @@ byte LD_QUE::readItem(uint16_t addr, char *buff, int len)
     } 
     else 
     {
-        return(setError(-30))
+        return(setError(-30));
     }
 }
 
@@ -474,12 +520,12 @@ byte LD_QUE::readItem(uint16_t addr, char *buff, int len)
 byte LD_QUE::currItemCount()
 {
     setCurrFunction(8);
-    if (isActive)
+    if (isActive())
     {   
         return(myCountCurr);
     } 
     else 
     {
-        return(setError(-35))
+        return(setError(-35));
     }
 }

@@ -8,7 +8,8 @@
 #define LD_MSG_H
 
 #include <Arduino.h>
-#include "LD_SER.h"
+//#include "../LD_DEV/LD_DEV.h"
+#include <LD_SER.h>
 
 /****d* Collector/MessageLogging
 *  NAME
@@ -37,10 +38,10 @@ const char MsgSevErrDegraded[] = "3";
 const char MsgSevErrFatal[] = "4";
 */
 
-const boolean MsgSendIt = true;
-const boolean MsgCheckVerbose = true;
+//const boolean MsgSendIt = true;
+//const boolean MsgCheckVerbose = true;
 
-const byte MsgOverhead = 15;
+//const byte MsgOverhead = 15;
 
 
 
@@ -50,18 +51,22 @@ const char MsgToken[] = ":$:";
 const byte MsgTokenLen = 3; // refers to the length of the above string
 const byte MsgTokenMaxIX = 8;  // The maximum allowable index value for the array msgTknValues.
 
-class LD_MSG_H : public LD_SER
+class LD_MSG : public LD_SER
 {
     
 public:
     LD_MSG();
     ~LD_MSG();
-    void init(byte theUnit);
+    void init(String theUnit);
     void setVerbose(boolean isVerbose);
     boolean isVerbose();
+    String unit();
+    String originator();
+    String msgNo();
+    String tokenValue();
     void newMessage(String theObject, int theMsgNo);
     void addValue(String theString);
-    void addValue(int theInt, byte theLen = 4);
-}
+    void addValue(int theInt, char *theFormat);
+};
 
 #endif

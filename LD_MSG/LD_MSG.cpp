@@ -1,14 +1,18 @@
-#include "C:\Users\Russell\SkyDrive\_Dev\LD_Libraries\LD_MSG\LD_MSG.h"
+#include <LD_MSG.h>
 
 /*
     LD_MSG();
     ~LD_MSG();
-    void init(byte theUnit);
+    void init(String theUnit);
     void setVerbose(boolean isVerbose);
     boolean isVerbose();
+    String unit();
+    String originator();
+    String msgNo();
+    String tokenValue();
     void newMessage(String theObject, int theMsgNo);
     void addValue(String theString);
-    void addValue(int theInt, byte theLen = 4);
+    void addValue(int theInt, char *theFormat);
 */
 
 const byte DeviceMessage = 2;
@@ -64,17 +68,41 @@ boolean LD_MSG::isVerbose()
     return(myVerbose);
 }
 
+String LD_MSG::unit()
+{
+    setCurrFunction(6);
+    return(myUnit);
+}
+
+
+String LD_MSG::originator()
+{
+    setCurrFunction(7);
+    return(myOriginator);
+}
+
+String LD_MSG::msgNo()
+{
+    setCurrFunction(8);
+    return(myMsgNo);
+}
+
+String LD_MSG::tokenValue()
+{
+    setCurrFunction(9);
+    return(myTokenValue);
+}
 //  Print a string to the serial port
 void LD_MSG::newMessage(String theOriginator, int theMsgNo)
 {   
-    char myValue[4];
+    char myValue[10];
 
     setCurrFunction(6);
-    if (isActive) 
+    if (isActive()) 
     {
         myOriginator = theOriginator;
         sprintf(myValue, Fmt3u, theMsgNo);
-        myMsgNo = myCurrValue;
+        myMsgNo = myValue;
         myTokenValue = StrNull;
         tokenCount = 0;
     }
@@ -83,11 +111,11 @@ void LD_MSG::newMessage(String theOriginator, int theMsgNo)
 //  Print an integer to the serial port, optionally as DEC
 void LD_MSG::addValue(String theString)
 {
-    setCurrFunction(7);
-    if (isActive)
+    setCurrFunction(11);
+    if (isActive())
     {   
         // we do need a check to ensure the token length does not exceed the max message length
-        if ( (myUnit.len() + myObject.len() + myMsgNo.len() + myTokenValue() + theString.len()) > MessageMax)
+        if ( (myUnit.length() + myOriginator.length() + myMsgNo.length() + myTokenValue.length() + theString.length()) > MessageMax)
         {
             setError(-10);
         } 
@@ -108,15 +136,23 @@ void LD_MSG::addValue(String theString)
 }
 
 //  Print a character to the serial port, optionally as HEX
-void LD_MSG::addValue(int theInt, char theFormat[5] = Fmt4u)
+void LD_MSG::addValue(int theInt, char *theFormat)
 {
     char myValue[5];
+    char myFormat[5];
+    String myStr = StrNull;
 
-    setCurrFunction(8);
-    if (isActive)
+    setCurrFunction(12);
+    if (isActive())
     {
-        sprintf(myValue, Fmt4u, theInt);
-        if ( (myUnit.len() + myObject.len() + myMsgNo.len() + myTokenValue() + theString.len()) > MessageMax)
+        int i;
+        for (i=0; i<6; i++)
+        {
+            myFormat[i] = *(theFormat + i);
+        }
+        sprintf(myValue, myFormat, theInt);
+        myStr.concat(myValue);
+        if ( (myUnit.length() + myOriginator.length() + myMsgNo.length() + myTokenValue.length() + myStr.length()) > MessageMax)
         {
             setError(-15);
         } 
@@ -124,7 +160,7 @@ void LD_MSG::addValue(int theInt, char theFormat[5] = Fmt4u)
         {
             if (tokenCount < MsgTokenMaxIX)
             {
-                myTokenValue.concat(myCurrValue);
+                myTokenValue.concat(myValue);
                 myTokenValue.concat(MsgValueSep);
                 tokenCount ++;
             } 

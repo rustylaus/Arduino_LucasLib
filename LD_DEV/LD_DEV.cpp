@@ -1,21 +1,23 @@
 #include "LD_DEV.h"
 
 /*
-    LD_DEV();               // Constructor
-    ~LD_DEV();              // De-Constructor
-    void setDevice(byte theNumber);               // sets this device number
-    byte device();                                // gets the device number
-    void setCurrFunction(byte theFunction);       // sets the current function number
-    byte currFunction();                          // gets the current function
+    LD_DEV();                                           // Constructor
+    ~LD_DEV();                                          // De-Constructor
+    void setDevice(byte theNumber);                     // sets this device number
+    byte device();                                      // gets the device number
+    void setCurrFunction(byte theFunction);             // sets the current function number
+    byte currFunction();                                // gets the current function
     // Enabled indicates whether the device is connected, on and able to be used
     // Active indicates whether the device is currently being used.  A device must be enabled before it can ever be active.
-    void setEnabled(boolean isEnabled);           // sets the enabled status
-    boolean isEnabled();                          // returns whether the device is enabled
-    void setActive(boolean isActive);             // sets the active status
-    boolean isActive();                           // returns whether the device is active
-    byte setError(byte theError);               // indicates a new error
-    boolean newError();                           // Indicates if a new error has just occurred
-    byte error(byte theIndex = 0);   
+    void setEnabled(boolean isEnabled);                 // sets the enabled status
+    boolean isEnabled();                                // returns whether the device is enabled
+    byte enabled();                                     // returns 1 if enabled or 0 if not
+    void setActive(boolean isActive);                   // sets the active status
+    boolean isActive();                                 // returns whether the device is active
+    byte active();                                      // returns 1 if active or 0 if not
+    byte setError(byte theError);                       // indicates a new error
+    boolean newError(boolean resetNewError = true);     // Indicates if a new error has just occurred
+    byte error(byte theIndex = 0);                      // returns the error indicated by theIndex, the latest error being the default
 */
 
 byte myDeviceNumber = 0;
@@ -77,10 +79,22 @@ boolean LD_DEV::isEnabled()
     return(myEnabled);
 }
 
+byte LD_DEV::enabled()
+{
+    if (isEnabled())
+    {
+        return(1);
+    }
+    else
+    {
+        return(0);
+    }
+}
+
 //  Sets the active status
 void LD_DEV::setActive(boolean isActive)
 {
-    if (isEnabled)
+    if (isEnabled())
     {
         myActive = isActive;
     } else {
@@ -95,8 +109,20 @@ boolean LD_DEV::isActive()
     return(myActive);
 }
 
+byte LD_DEV::active()
+{
+    if (isActive())
+    {
+        return(1);
+    }
+    else
+    {
+        return(0);
+    }
+}
+
 //  Indicates a new error
-byte LD_DEV::setError(byte theError)
+byte LD_DEV::setError(byte theErrorNo)
 {
     // Update the structure first
     myError[2] = myError[1];
@@ -105,11 +131,12 @@ byte LD_DEV::setError(byte theError)
 
     myNewError = true;
 
-    return(theError);
+    return(theErrorNo);
 }
 
 //  Returns true or false depending on if a new error was reported.              
-boolean LD_DEV::newError(boolean resetNewError = true)
+boolean LD_DEV::newError(boolean resetNewError)
+//  default:= resetNewError = true
 {
     boolean myNewErr = myNewError;
     if (resetNewError) { myNewError = false; }
@@ -117,7 +144,8 @@ boolean LD_DEV::newError(boolean resetNewError = true)
 }
 
 //  Returns the error indicated by theIndex, the latest error being the default               
-byte LD_DEV::error(byte theIndex = 0)
+byte LD_DEV::error(byte theIndex)
+//  default:= theIndex = 0
 {
     if (theIndex > -1 && theIndex < ErrorArraySize)
     {
