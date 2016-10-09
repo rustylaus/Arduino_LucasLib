@@ -58,6 +58,7 @@ void LD_SER::print(String theString, boolean newLine)
         if (newLine) 
         {
             Serial.println(theString);
+            delay(200);
         } else 
         {
             Serial.print(theString);

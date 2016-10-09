@@ -27,10 +27,13 @@ boolean myActive = false;
 boolean myNewError = false;
 byte myError[ErrorArraySize];
 
+
 //  Constructor
 LD_DEV::LD_DEV()
 {
     int i;
+    myEnabled = false;
+    myActive = false;
     for (i = 0; i < ErrorArraySize; i++)
     {
         myError[i] = 0;
@@ -71,6 +74,10 @@ byte LD_DEV::currFunction()
 void LD_DEV::setEnabled(boolean isEnabled)
 {
     myEnabled = isEnabled;
+    if (!isEnabled)
+    {
+        myActive = false;
+    }
 }
 
 //  Returns whether the device is enabled
@@ -111,7 +118,7 @@ boolean LD_DEV::isActive()
 
 byte LD_DEV::active()
 {
-    if (isActive())
+    if (myActive)
     {
         return(1);
     }

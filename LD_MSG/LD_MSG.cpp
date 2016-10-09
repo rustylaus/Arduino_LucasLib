@@ -3,11 +3,10 @@
 /*
     LD_MSG();
     ~LD_MSG();
-    void init(String theUnit);
     void setVerbose(boolean isVerbose);
     boolean isVerbose();
-    String unit();
-    String originator();
+    String msgUnit();
+    String msgOriginator();
     String msgNo();
     String tokenValue();
     void newMessage(String theObject, int theMsgNo);
@@ -22,31 +21,17 @@ boolean myVerbose = false;
 
 byte tokenCount = 0;
 
-String myUnit;
+
 String myOriginator;
 String myMsgNo;
 String myTokenValue;
 
 //  Constructor
-LD_MSG::LD_MSG()
+LD_MSG::LD_MSG(String theUnit, byte theDeviceNumber, boolean serialEnabled)
 {
-    setDevice(DeviceMessage);
-    setCurrFunction(1);
+    setCurrFunction(51);
+    deviceInit(theUnit, theDeviceNumber, serialEnabled);
     setEnabled(true);
-}
-
-//  Destructor
-LD_MSG::~LD_MSG()
-{
-    setCurrFunction(2);
-    /* nothing to do */
-}
-
-//  Message initialisation
-void LD_MSG::init(String theUnit)
-{
-    setCurrFunction(3);
-    myUnit = theUnit;
     myOriginator = StrNull;
     myMsgNo = StrNull;
     myTokenValue = StrNull;
@@ -54,42 +39,48 @@ void LD_MSG::init(String theUnit)
     setActive(true);
 }
 
+//  Destructor
+LD_MSG::~LD_MSG()
+{
+    setCurrFunction(52);
+    /* nothing to do */
+}
+
 //  Sets the verbose setting
 void LD_MSG::setVerbose(boolean isVerbose)
 {   
-    setCurrFunction(4);
+    setCurrFunction(54);
     myVerbose = isVerbose;
 }
 
 // retrieves the current verbose setting
 boolean LD_MSG::isVerbose()
 {   
-    setCurrFunction(5);
+    setCurrFunction(55);
     return(myVerbose);
 }
 
-String LD_MSG::unit()
+String LD_MSG::msgUnit()
 {
-    setCurrFunction(6);
-    return(myUnit);
+    setCurrFunction(56);
+    return(unit());
 }
 
-
-String LD_MSG::originator()
+String LD_MSG::msgOriginator()
 {
-    setCurrFunction(7);
+    setCurrFunction(57);
     return(myOriginator);
 }
 
 String LD_MSG::msgNo()
 {
-    setCurrFunction(8);
+    setCurrFunction(58);
     return(myMsgNo);
 }
 
 String LD_MSG::tokenValue()
 {
-    setCurrFunction(9);
+    setCurrFunction(59);
     return(myTokenValue);
 }
 //  Print a string to the serial port
@@ -97,7 +88,7 @@ void LD_MSG::newMessage(String theOriginator, int theMsgNo)
 {   
     char myValue[10];
 
-    setCurrFunction(6);
+    setCurrFunction(60);
     if (isActive()) 
     {
         myOriginator = theOriginator;
@@ -111,7 +102,9 @@ void LD_MSG::newMessage(String theOriginator, int theMsgNo)
 //  Print an integer to the serial port, optionally as DEC
 void LD_MSG::addValue(String theString)
 {
-    setCurrFunction(11);
+    setCurrFunction(61);
+    String myUnit;
+    myUnit = unit();
     if (isActive())
     {   
         // we do need a check to ensure the token length does not exceed the max message length
@@ -140,9 +133,11 @@ void LD_MSG::addValue(int theInt, char *theFormat)
 {
     char myValue[5];
     char myFormat[5];
+    String myUnit;
     String myStr = StrNull;
 
-    setCurrFunction(12);
+    myUnit = unit();
+    setCurrFunction(62);
     if (isActive())
     {
         int i;

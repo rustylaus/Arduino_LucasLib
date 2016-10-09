@@ -9,7 +9,7 @@
 
 #include <Arduino.h>
 //#include "../LD_DEV/LD_DEV.h"
-#include <LD_SER.h>
+#include <LD_BASE.h>
 #include <Adafruit_FRAM_SPI.h>
 
 typedef struct {
@@ -18,11 +18,11 @@ typedef struct {
   unsigned int addr;
 } DEQUEUE_ITEM;
 
-class LD_QUE : public LD_SER
+class LD_QUE : public LD_BASE
 {
     
 public:
-    LD_QUE(int RAMport);
+    LD_QUE(String theUnit, byte theDeviceNumber, boolean serialEnabled, int RAMport);
     ~LD_QUE();
     byte initQ(boolean fullInit = false);                           // returns bad blocks found in FRAM
     byte saveQ();

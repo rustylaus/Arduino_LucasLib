@@ -9,17 +9,17 @@
 
 #include <Arduino.h>
 #include <SoftwareSerial.h>
-#include <LD_SER.h>
+#include <LD_BASE.h>
     
 const char DgStart = '{';
 const char DgEnd = '}';
 const char DgSep = '|';
 
-class LD_COM : public LD_SER
+class LD_COM : public LD_BASE
 {
 
 public:
-    LD_COM(int theRxPort, int theTxPort);
+    LD_COM(String theUnit, byte theDeviceNumber, boolean serialEnabled, int theRxPort, int theTxPort);
     ~LD_COM();
     void commInit(long thePortSpeed);
     byte outputInit(char *theBuffer, byte theMaxIX);

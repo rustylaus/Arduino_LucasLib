@@ -9,7 +9,7 @@
 
 #include <Arduino.h>
 //#include "../LD_DEV/LD_DEV.h"
-#include <LD_SER.h>
+#include <LD_BASE.h>
 
 /****d* Collector/MessageLogging
 *  NAME
@@ -51,20 +51,19 @@ const char MsgToken[] = ":$:";
 const byte MsgTokenLen = 3; // refers to the length of the above string
 const byte MsgTokenMaxIX = 8;  // The maximum allowable index value for the array msgTknValues.
 
-class LD_MSG : public LD_SER
+class LD_MSG : public LD_BASE
 {
     
 public:
-    LD_MSG();
+    LD_MSG(String theUnit, byte theDeviceNumber, boolean serialEnabled);
     ~LD_MSG();
-    void init(String theUnit);
     void setVerbose(boolean isVerbose);
     boolean isVerbose();
-    String unit();
-    String originator();
+    String msgUnit();
+    String msgOriginator();
     String msgNo();
     String tokenValue();
-    void newMessage(String theObject, int theMsgNo);
+    void newMessage(String theOriginator, int theMsgNo);
     void addValue(String theString);
     void addValue(int theInt, char *theFormat);
 };

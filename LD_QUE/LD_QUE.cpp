@@ -1,7 +1,7 @@
 #include <LD_QUE.h>
 
 /*
-    LD_QUE(int RAMport);
+    LD_QUE(String theUnit, byte theDeviceNumber, boolean serialEnabled, int RAMport);
     ~LD_QUE();
     byte initQ(boolean fullInit = false);                           // returns bad blocks found in FRAM
     byte saveQ();
@@ -42,11 +42,11 @@ const byte MyBlockSize = 69;
 int myRAMport = 0;
 
 //  Constructor
-LD_QUE::LD_QUE(int RAMport)
+LD_QUE::LD_QUE(String theUnit, byte theDeviceNumber, boolean serialEnabled, int RAMport)
     : fram(RAMport)
 {
-    setDevice(DeviceQueue);
-    setCurrFunction(1);
+    setCurrFunction(65);
+    deviceInit(theUnit, theDeviceNumber, serialEnabled);
     myRAMport = RAMport;
     setEnabled(true);
 }
@@ -54,7 +54,7 @@ LD_QUE::LD_QUE(int RAMport)
 //  Destructor
 LD_QUE::~LD_QUE()
 {
-    setCurrFunction(2);
+    setCurrFunction(66);
     /* nothing to do */
 }
 
@@ -102,7 +102,7 @@ byte LD_QUE::NoSlots()
 byte LD_QUE::initQ(boolean fullInit)
 {
 
-    setCurrFunction(3);
+    setCurrFunction(67);
 
     if (fram.begin()) 
     {  
@@ -225,7 +225,7 @@ byte LD_QUE::initQ(boolean fullInit)
 //  Saves the Queue header to non-volatile storage
 byte LD_QUE::saveQ()
 {   
-    setCurrFunction(4);
+    setCurrFunction(68);
     uint16_t addr = MyHeaderSlot;
 
     if (isActive()) 
@@ -301,7 +301,7 @@ byte LD_QUE::writeQitem(char *theData, byte theLength, char theType)
     
     // theLength is the length of the structure to be written - we need to add the overhead to it.  The overhead is currently 6 (SRAMoverhead).
 
-    setCurrFunction(5);
+    setCurrFunction(69);
     byte indexToUse = 0;
     unsigned int addrToUse = 0;
     char inUse[2];
@@ -409,7 +409,7 @@ byte LD_QUE::writeQitem(char *theData, byte theLength, char theType)
 //  
 byte LD_QUE::readQaddr(DEQUEUE_ITEM *myItem)
 {   
-    setCurrFunction(6);
+    setCurrFunction(70);
 
     if (isActive()) 
     {
@@ -500,7 +500,7 @@ byte LD_QUE::readQaddr(DEQUEUE_ITEM *myItem)
 //  
 byte LD_QUE::readItem(uint16_t addr, char *buff, int len)
 {
-    setCurrFunction(7);
+    setCurrFunction(71);
     if (isActive())
     {   
         int i;
@@ -519,7 +519,7 @@ byte LD_QUE::readItem(uint16_t addr, char *buff, int len)
 //  Returns the number of items currently queued
 byte LD_QUE::currItemCount()
 {
-    setCurrFunction(8);
+    setCurrFunction(72);
     if (isActive())
     {   
         return(myCountCurr);

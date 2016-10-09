@@ -1,7 +1,7 @@
 #include <LD_COM.h>
 
 /*
-    LD_COM(int theRxPort, int theTxPort);
+    LD_COM(String theUnit, byte theDeviceNumber, boolean serialEnabled, int theRxPort, int theTxPort);
     ~LD_COM();
     void commInit(long thePortSpeed);
     byte outputInit(char *theBuffer, byte theMaxIX);
@@ -41,23 +41,24 @@ const byte MyMaxToken = 31;     // the maximum token IX
 const byte MyMaxBuff = 64;      // the maximum buffer IX
 
 //  Constructor
-LD_COM::LD_COM(int theRxPort, int theTxPort)
+LD_COM::LD_COM(String theUnit, byte theDeviceNumber, boolean serialEnabled, int theRxPort, int theTxPort)
     : xBee(theRxPort, theTxPort)
 {
-    setDevice(DeviceComms);           // See other devices
-    setCurrFunction(1);
+    setCurrFunction(31);
+    deviceInit(theUnit, theDeviceNumber, serialEnabled);
+    setEnabled(true);
 }
 
 //  Destructor
 LD_COM::~LD_COM()
 {
-    setCurrFunction(2);
+    setCurrFunction(32);
     /* nothing to do */
 }
 
 void LD_COM::commInit(long thePortSpeed)
 {
-    setCurrFunction(3);
+    setCurrFunction(33);
     //xBee = SoftwareSerial xBee(theRxPort, theTxPort);
     xBee.begin(thePortSpeed);
     setActive(true);
@@ -65,25 +66,25 @@ void LD_COM::commInit(long thePortSpeed)
 
 byte LD_COM::inputLen()
 {
-    setCurrFunction(4);
+    setCurrFunction(34);
     return(myBuffLen);
 }
 
 char LD_COM::tokenChar(byte theIX)
 {
-    setCurrFunction(5);
+    setCurrFunction(35);
     return(myToken[theIX]);
 }
 
 int LD_COM::tokenInt()
 {
-    setCurrFunction(6);
+    setCurrFunction(36);
     return((String(myToken).toInt()));
 }
 
 String LD_COM::tokenString()
 {   
-    setCurrFunction(7);
+    setCurrFunction(37);
     String s = "";
     s.concat(myToken);
     return(s);
@@ -91,25 +92,25 @@ String LD_COM::tokenString()
 
 byte LD_COM::tokenLen()
 {
-    setCurrFunction(8);
+    setCurrFunction(38);
     return(myTokenLen);
 }
 
 char LD_COM::dgType()
 {
-    setCurrFunction(9);
+    setCurrFunction(39);
     return(myCommType);
 }
 
 byte LD_COM::MaxBuff()
 {
-    setCurrFunction(10);
+    setCurrFunction(40);
     return(MyMaxBuff);
 }
 
 byte LD_COM::MaxToken()
 {
-    setCurrFunction(11);
+    setCurrFunction(41);
     return(MyMaxToken);
 }
 
@@ -118,7 +119,7 @@ byte LD_COM::outputInit(char *theBuffer, byte theMaxIX)
 // returns the length of the buffer as confirmation, or an error (<0)
 {
     int i;
-    setCurrFunction(12);
+    setCurrFunction(42);
 
     if (theMaxIX > MyMaxBuff)
     {
@@ -140,7 +141,7 @@ byte LD_COM::outputFill(char *theSource, char *theBuff, byte theBuffOffset, byte
 // This does a straight copy of the theSource to the output buffer after some checking
 {
     byte i;
-    setCurrFunction(13);
+    setCurrFunction(43);
 
     // if the device is active...
     if (isActive())
@@ -172,7 +173,7 @@ byte LD_COM::outputBuild(char *theSource, char *theBuff, byte theLen)
 // This does a copy of the source to the output buffer, but also maintains an index of where the next available 
 // byte is located in the buffer - returns the number of bytes copied
 {
-    setCurrFunction(14);
+    setCurrFunction(44);
     myOC = 0;
     // go fill the output buffer after checking it will not overflow
     myOC = outputFill(theSource, theBuff, myOutputIX, theLen);  // returns an error (<0) or the number of bytes copied
@@ -192,7 +193,7 @@ byte LD_COM::outputSend(char *theBuff, char theType, byte theLength)
     
     char lenF[4];
     
-    setCurrFunction(15);
+    setCurrFunction(45);
     myOC = 0;
 
     if (isActive())
@@ -264,7 +265,7 @@ byte LD_COM::outputSend(char *theBuff, char theType, byte theLength)
 
 void LD_COM::outputSendChar(char theChar) 
 {
-    setCurrFunction(16);
+    setCurrFunction(46);
     myOC = 0;
     xBee.write(theChar);
     //if (_logComms) { _ser.print(theChar); }
@@ -272,7 +273,7 @@ void LD_COM::outputSendChar(char theChar)
 
 int LD_COM::inputAvailable()
 {
-    setCurrFunction(16);
+    setCurrFunction(47);
     myOC = 0;
     return(xBee.available());
 }
@@ -300,7 +301,7 @@ byte LD_COM::inputRecv(boolean theDiscard)
     String strVal = StrNull;
     char bufferInput[65];   // only used by this routine - the output is placed in myBuff
 
-    setCurrFunction(17);
+    setCurrFunction(48);
     myOC = 0;
     print("!", true);
 
@@ -418,7 +419,7 @@ byte LD_COM::tokenGetLen(int theLength, int theOffset)
 
     byte i;
 
-    setCurrFunction(18);
+    setCurrFunction(49);
     myOC = 0;
 
     if (theOffset == 999) { theOffset = myNextOffset; }
@@ -459,6 +460,7 @@ byte LD_COM::tokenGetLen(int theLength, int theOffset)
         
         //
         // return with number of characters in string
+        myTokenLen = i;
         return (i);
     } 
     else 
@@ -474,7 +476,7 @@ byte LD_COM::tokenGetSep(int theOffset)
 {
     byte i;
 
-    setCurrFunction(19);
+    setCurrFunction(50);
     myOC = 0;
     
     if (theOffset == 999) { theOffset = myNextOffset; }
@@ -501,19 +503,6 @@ byte LD_COM::tokenGetSep(int theOffset)
         myToken[i] = MyNull;
         i++; // add the extra char for the \0
     }
-
-    /*
-    float xh, yh, ayf, axf;
-    int var_compass;
-    ayf=ay/57.0;//Convert to rad
-    axf=ax/57.0;//Convert to rad
-    xh=cx*cos(ayf)+cy*sin(ayf)*sin(axf)-cz*cos(axf)*sin(ayf);
-    yh=cy*cos(axf)+cz*sin(axf);
-    var_compass=atan2((double)yh,(double)xh) * (180 / PI) -90; // angle in degrees
-    if (var_compass>0){var_compass=var_compass-360;}
-    var_compass=360+var_compass;
-    return (var_compass);
-    */
-
+    myTokenLen = i;
     return(i);
 }
