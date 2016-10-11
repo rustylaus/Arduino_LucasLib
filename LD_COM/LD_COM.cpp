@@ -23,25 +23,8 @@
     byte MaxBuff();
 */
 
-const byte DeviceComms = 4;
-
-//SoftwareSerial xBee();
-
-char myBuff[65];          // Area to read I/O chars into from a device
-byte myBuffLen;           // The number of chars in the buffer
-char myToken[32];         // An area to extract information from a buffer
-byte myTokenLen;          // The number of chars in token (excluding MyNull)
-byte myNextOffset;        // The offset of the next byte to read from the buffer
-byte myOutputMax = 0;
-byte myOutputIX = 0;
-byte myOC = 0;
-char myCommType = '*';
-
-const byte MyMaxToken = 31;     // the maximum token IX
-const byte MyMaxBuff = 64;      // the maximum buffer IX
-
 //  Constructor
-LD_COM::LD_COM(String theUnit, byte theDeviceNumber, boolean serialEnabled, int theRxPort, int theTxPort)
+LD_COM::LD_COM(byte theUnit, byte theDeviceNumber, boolean serialEnabled, int theRxPort, int theTxPort)
     : xBee(theRxPort, theTxPort)
 {
     setCurrFunction(31);
@@ -85,7 +68,7 @@ int LD_COM::tokenInt()
 String LD_COM::tokenString()
 {   
     setCurrFunction(37);
-    String s = "";
+    String s = StrNull;
     s.concat(myToken);
     return(s);
 }
@@ -298,8 +281,8 @@ byte LD_COM::inputRecv(boolean theDiscard)
     byte o = 0;
     int c = 0;
     char valueF[4];
-    String strVal = StrNull;
-    char bufferInput[65];   // only used by this routine - the output is placed in myBuff
+    //String strVal = StrNull;
+    //char bufferInput[65];   // only used by this routine - the output is placed in myBuff
 
     setCurrFunction(48);
     myOC = 0;
@@ -307,7 +290,7 @@ byte LD_COM::inputRecv(boolean theDiscard)
 
     for (i = 0; i < MyMaxBuff; i++) 
     {
-        bufferInput[i] = MyNull;
+        //bufferInput[i] = MyNull;
         myBuff[i] = MyNull;
     }
     
@@ -339,7 +322,8 @@ byte LD_COM::inputRecv(boolean theDiscard)
                 if (!theDiscard && foundStart && commChar != DgEnd) 
                 {
                     //_commBufferInput.concat(_commChar);                                // Add the received character to the receive buffer ONLY if we have found the start of the dialog
-                    bufferInput[i] = commChar;
+                    //bufferInput[i] = commChar;
+                    myBuff[i] = commChar;
                     i++;
                 }
                 if (!theDiscard && commChar == DgStart) { foundStart = true; }
@@ -364,10 +348,12 @@ byte LD_COM::inputRecv(boolean theDiscard)
                 // Get the length of the structure and load it into buffLen
                 for (o = 0; o < 4; o++) 
                 {
-                    valueF[o] = bufferInput[o];
+                    //valueF[o] = bufferInput[o];
+                    valueF[o] = myBuff[o];
                 }
-                strVal.concat(valueF);
-                myBuffLen = strVal.toInt(); // this is the length WITHOUT the overhead, but with the type!
+                //strVal.concat(valueF);
+                //myBuffLen = strVal.toInt(); // this is the length WITHOUT the overhead, but with the type!
+                myBuffLen = atoi(valueF); // this is the length WITHOUT the overhead, but with the type!
                 myBuffLen -= 1;             // we need buffLen to be the number of byte to copy, so subtract one for the type
                 // OK, before we do anything else, we should check that the length if valid
                 // the variable i has the length of the chars in _commBufferInput - we need to take off 4 for the length (incl null), and an extra one for the type
@@ -381,11 +367,13 @@ byte LD_COM::inputRecv(boolean theDiscard)
                 {
                     // the length was good!
                     // Next, get the comms type and load it into _commType
-                    myCommType = bufferInput[4];
+                    //myCommType = bufferInput[4];
+                    myCommType = myBuff[4];
                     // Now load the remainder of the input buffer into the WORK_IO.buff array
                     for (o = 0; o < myBuffLen; o++)          // note that buffLen = the associated structure ONLY, not the initial overhead (4 char length + 1 char type)
                     {
-                        myBuff[o] = bufferInput[(o + 5)];
+                        myBuff[o] = myBuff[(o + 5)];
+                        //myBuff[o] = bufferInput[(o + 5)];
                         //_commBufferInput.toCharArray(*ioWork->buff,100);
                     }
                     // set the outcome to equal the length of the buffer

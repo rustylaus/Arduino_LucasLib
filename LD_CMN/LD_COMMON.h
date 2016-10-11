@@ -14,4 +14,16 @@ static char Fmt3u[5] = "%03u";
 static char Fmt2u[5] = "%02u"; 
 static char Fmt1u[5] = "%01u";
 
+// Device Enabled Values
+static byte DevEnableOn = 1;
+static byte DevEnableOff = 0;
+// Device Status Values
+static byte DevStatOff = 0;
+static byte DevStatOn = 1;
+// True and False Values
+static char ChTrue = 'T';
+static char ChFalse = 'F';
+// Misc Values
+static char MyAt = '@';
+
 #endif

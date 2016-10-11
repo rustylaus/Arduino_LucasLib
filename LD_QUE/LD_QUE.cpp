@@ -21,28 +21,8 @@
     byte NoSlots();                                                 // The maximum number of available slots in the queue          
 */
 
-const byte DeviceQueue = 3;
-
-const byte RAMoverhead = 5;
-
-int myNTwrite = 0;              // Next to write - zero relative slot number
-int myNTread = 0;               // Next to read - relative slot number
-byte myCountCurr = 0;           // Number of items in the buffer
-byte myCountCurrMax = 0;        // Maximum items ever Qd in the buffer this run
-byte myCountOverflow = 0;       // The number of times the buffer has been full
-int myCountQd = 0;              // The number of items that has been queued in the buffer
-int myCountDeQd = 0;            // The number of items that has been de-queued from the buffer
-
-const int MyHeaderSlot = 0;
-const int MyDgStartSlot = 1;
-const int MyDgEndSlot = 101;
-const byte MyNoSlots = 100; 
-const byte MyBlockSize = 69;
-
-int myRAMport = 0;
-
 //  Constructor
-LD_QUE::LD_QUE(String theUnit, byte theDeviceNumber, boolean serialEnabled, int RAMport)
+LD_QUE::LD_QUE(byte theUnit, byte theDeviceNumber, boolean serialEnabled, int RAMport)
     : fram(RAMport)
 {
     setCurrFunction(65);
@@ -58,12 +38,12 @@ LD_QUE::~LD_QUE()
     /* nothing to do */
 }
 
-int LD_QUE::NTwrite()
+byte LD_QUE::NTwrite()
 {
     return(myNTwrite);
 }
 
-int LD_QUE::NTread()
+byte LD_QUE::NTread()
 {
     return(myNTread);
 }
@@ -129,13 +109,14 @@ byte LD_QUE::initQ(boolean fullInit)
     int BadBlockCount = 0;
 
     if (fullInit) 
-    {
+    {   
+        print("FRAM full init... ");
         uint16_t addrToUse = 0;
         char myValue[4];
         char buff[5];
 
         String strVal;
-        boolean isOK = true;
+        byte isOK = 0;
         boolean initBuffer = false;
 
         char initBuffOut[64];
@@ -144,12 +125,12 @@ byte LD_QUE::initQ(boolean fullInit)
     
         for (j = 0; j < InitBuffMax; j++) 
         {
-            initBuffOut[j] = '\0';
+            initBuffOut[j] = MyNull;
         }
         
         buff[0] = 'N';
         buff[4] = 'N';
-        
+        //print("Writing... ");
         for (i = 0; i < MyNoSlots; i++) 
         { 
             addrToUse = (i * MyBlockSize);
@@ -168,7 +149,11 @@ byte LD_QUE::initQ(boolean fullInit)
             fram.write(addrToUse, (uint8_t *)initBuffOut, (InitBuffMax + 1));
             fram.writeEnable(false);
         }
-        
+        /*
+        print("Done [");
+        print(i);
+        print("]... Comparing...", true);
+        */
         for (i = 0; i < MyNoSlots; i++) 
         {
             addrToUse = (i * MyBlockSize);
@@ -177,7 +162,7 @@ byte LD_QUE::initQ(boolean fullInit)
             {
                 addrToUse ++;
                 readItem(addrToUse, &myValue[0], 3);
-                myValue[3] = '\0';
+                myValue[3] = MyNull;
                 strVal = StrNull;
                 strVal.concat(myValue);
                 j = strVal.toInt();
@@ -189,36 +174,48 @@ byte LD_QUE::initQ(boolean fullInit)
                     {
                         addrToUse ++;
                         readItem(addrToUse, &initBuffIn[0], (InitBuffMax + 1));
-                        for (j = 0; j < 123; j++) 
+                        for (j = 0; j < (InitBuffMax + 1); j++) 
                         {
-                            if (initBuffIn[j] != initBuffOut[j]) { isOK = false; }
+                            if (initBuffIn[j] != initBuffOut[j]) { isOK = j + 4; }
                         }
                     } 
                     else 
                     {
-                        isOK = false;
+                        isOK = 3;
                     }  
                 } 
                 else 
                 {
-                    isOK = false;
+                    isOK = 2;
                 }
             } 
             else 
             {
-                isOK = false;
+                isOK = 1;
             }
-            if (!isOK) 
+            if (isOK != 0) 
             {
                 BadBlockCount++;
+                /*
+                print("FRAM Err=");
+                print(isOK);
+                print(",block=");
+                print(i);
+                print(",badblocks=");
+                print(BadBlockCount);
+                print(".",true);
+                */
                 buff[0] = 'X';
                 fram.writeEnable(true);
                 fram.write((i * MyBlockSize), (uint8_t *)buff, 1);
                 fram.writeEnable(false);
+                isOK = 0;
             }      
         }
     }
     saveQ();
+    print("done. Badblocks=");
+    print(BadBlockCount, true);
     return(BadBlockCount);
 }
 

@@ -10,23 +10,29 @@
 #include <Arduino.h>
 #include <LD_COMMON.h>
 
-#define ErrorArraySize 3
-
-// Device Enabled Values
-const byte DevEnableOn = 1;
-const byte DevEnableOff = 0;
-// Device Status Values
-const byte DevStatOff = 0;
-const byte DevStatOn = 1;
+#define ErrorArraySize 2
 
 class LD_BASE 
 {
-    
+
+    byte myUnit;
+    byte myDeviceNumber = 0;
+    byte myCurrFunction = 0;
+    boolean myDeviceInitialised = false;
+    boolean myEnabled = false;
+    boolean myActive = false;
+    boolean mySerialEnabled = false;
+    boolean myNewError = false;
+    byte myError[ErrorArraySize];
+    byte myErrorFnc[ErrorArraySize];
+    char fmtByteBuff[8];
+
 public:
+
     LD_BASE(); // Constructor
     ~LD_BASE();                                         // De-Constructor
-    void deviceInit(String theUnit, byte theDeviceNumber, boolean serialEnabled); // base initialiser
-    String unit();                                      // gets the unit number
+    void deviceInit(byte theUnit, byte theDeviceNumber, boolean serialEnabled); // base initialiser
+    byte unit();                                      // gets the unit number
     byte device();                                      // gets the device number
     void setCurrFunction(byte theFunction);             // sets the current function number
     byte currFunction();                                // gets the current function
@@ -48,10 +54,41 @@ public:
     void print(int theInt, boolean newLine = false, boolean isDec = false);             // Prints an integer, optionally as DEC
     void print(unsigned int theInt, boolean newLine = false, boolean isDec = false);    // Prints an unsigned integer, optionally as DEC
     void print(char theChar, boolean newLine = false, boolean isHex = false);           // Prints a char, optionally as HEX
-    //void printArray(char *theChar, int theLen, boolean isHex = false);                  // Prints char array for specified length
+    void printArray(char *theChar, int theLen, boolean isHex = false);                  // Prints char array for specified length
     //void printStat(String theString, int theStatus);
-    String dumpErrInfo();                               
-    String dumpDevInfo();      
+    void dumpErrInfo(char *buff, byte theStartOffset);                             
+    void dumpDevInfo(char *buff);
+
+private:
+
+    char chrTF(boolean theValue)
+    // Returns a single char of value either 'T' or 'F' (true or false) based on the
+    // value of the passed boolean value theValue
+    {
+        if (theValue)
+        {
+            return(ChTrue);
+        }
+        else
+        {
+            return(ChFalse);
+        }
+    }
+
+    void strFmtByte(byte theValue, char *theSuffix, byte theSuffLen)
+    // WARNING: Uses global member variable fmtByteBuff for output
+    // Converts the numeric byte value to a 3 char null-terminated string, and copies it to
+    // fmtByteBuff, then copies chars from the char array theSuffix for a length of theSuffLen,
+    // to fmtByteBuff and finally adds a null tpo terminate the entire string.
+    // Used to build the Dump output.
+    {
+        char myFmt[4];
+        sprintf(myFmt,Fmt3u,theValue);
+        memcpy(&fmtByteBuff[0], &myFmt[0], 3);
+        memcpy(&fmtByteBuff[3], theSuffix, theSuffLen);
+        fmtByteBuff[(3 + theSuffLen)] = MyNull;
+    }
+
  };
 
 #endif

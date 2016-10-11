@@ -10,16 +10,30 @@
 #include <Arduino.h>
 #include <SoftwareSerial.h>
 #include <LD_BASE.h>
-    
-const char DgStart = '{';
-const char DgEnd = '}';
-const char DgSep = '|';
+
+// Communications Static Values    
+static char DgStart = '{';
+static char DgEnd = '}';
+static char DgSep = '|';
+// Maximum Array Dimensions
+const byte MyMaxToken = 31;     // the maximum token IX
+const byte MyMaxBuff = 64;      // the maximum buffer IX
 
 class LD_COM : public LD_BASE
 {
 
+    char myBuff[65];          // Area to read I/O chars into from a device
+    byte myBuffLen;           // The number of chars in the buffer
+    char myToken[32];         // An area to extract information from a buffer
+    byte myTokenLen;          // The number of chars in token (excluding MyNull)
+    byte myNextOffset;        // The offset of the next byte to read from the buffer
+    byte myOutputMax = 0;
+    byte myOutputIX = 0;
+    byte myOC = 0;
+    char myCommType = '*';
+
 public:
-    LD_COM(String theUnit, byte theDeviceNumber, boolean serialEnabled, int theRxPort, int theTxPort);
+    LD_COM(byte theUnit, byte theDeviceNumber, boolean serialEnabled, int theRxPort, int theTxPort);
     ~LD_COM();
     void commInit(long thePortSpeed);
     byte outputInit(char *theBuffer, byte theMaxIX);

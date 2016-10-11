@@ -14,27 +14,17 @@
     void addValue(int theInt, char *theFormat);
 */
 
-const byte DeviceMessage = 2;
-const byte MessageMax = 50;
-
-boolean myVerbose = false;
-
-byte tokenCount = 0;
-
-
-String myOriginator;
-String myMsgNo;
-String myTokenValue;
-
 //  Constructor
-LD_MSG::LD_MSG(String theUnit, byte theDeviceNumber, boolean serialEnabled)
+LD_MSG::LD_MSG(byte theUnit, byte theDeviceNumber, boolean serialEnabled)
 {
     setCurrFunction(51);
     deviceInit(theUnit, theDeviceNumber, serialEnabled);
     setEnabled(true);
-    myOriginator = StrNull;
-    myMsgNo = StrNull;
-    myTokenValue = StrNull;
+    myMsgDevice = 0;
+    myMsgMethod = 0;
+    myMsgNo = 0;
+    myTokenValue[0] = MyNull;
+    myTokenIX = 0;
     tokenCount = 0;
     setActive(true);
 }
@@ -60,108 +50,125 @@ boolean LD_MSG::isVerbose()
     return(myVerbose);
 }
 
-String LD_MSG::msgUnit()
+byte LD_MSG::msgDevice()
 {
     setCurrFunction(56);
-    return(unit());
+    return(myMsgDevice);
 }
 
-String LD_MSG::msgOriginator()
+byte LD_MSG::msgMethod()
 {
     setCurrFunction(57);
-    return(myOriginator);
+    return(myMsgMethod);
 }
 
-String LD_MSG::msgNo()
+int LD_MSG::msgNo()
 {
     setCurrFunction(58);
     return(myMsgNo);
 }
 
-String LD_MSG::tokenValue()
+byte LD_MSG::tokenValue(char *theCharArray)
 {
     setCurrFunction(59);
-    return(myTokenValue);
+    int i = 0;
+    while (myTokenValue[i] != MyNull && i < (MsgTokenMaxIX + 1))
+    {
+        *(theCharArray + i) = myTokenValue[i];
+        i++;
+    }
+    *(theCharArray + i) = MyNull;
+    i++;
+    return(i);
+}
+
+byte LD_MSG::tokenLen()
+{
+    setCurrFunction(53);
+    return(myTokenIX);
 }
 //  Print a string to the serial port
-void LD_MSG::newMessage(String theOriginator, int theMsgNo)
+void LD_MSG::newMessage(byte theDevice, byte theMethod, int theMsgNo)
 {   
-    char myValue[10];
+    char myValue[4];
 
     setCurrFunction(60);
     if (isActive()) 
     {
-        myOriginator = theOriginator;
-        sprintf(myValue, Fmt3u, theMsgNo);
-        myMsgNo = myValue;
-        myTokenValue = StrNull;
+        myMsgDevice = theDevice;
+        myMsgMethod = theMethod;
+        myMsgNo = theMsgNo;
+        myTokenValue[0] = MyNull;
+        myTokenIX = 0;
         tokenCount = 0;
     }
 }
 
 //  Print an integer to the serial port, optionally as DEC
-void LD_MSG::addValue(String theString)
+void LD_MSG::addValue(char *theValueArray, byte theValueLength)
 {
     setCurrFunction(61);
-    String myUnit;
-    myUnit = unit();
     if (isActive())
     {   
         // we do need a check to ensure the token length does not exceed the max message length
-        if ( (myUnit.length() + myOriginator.length() + myMsgNo.length() + myTokenValue.length() + theString.length()) > MessageMax)
+        if ( (13 + (sizeof(myTokenValue)) + theValueLength) > MessageMax)
         {
             setError(-10);
         } 
         else
         {
-            if (tokenCount < MsgTokenMaxIX)
-            {
-                myTokenValue.concat(theString);
-                myTokenValue.concat(MsgValueSep);
-                tokenCount ++;
-            } 
+            if (tokenCount > MsgTokenMax)
+            {   
+                setError(-11);
+            }
             else
             {
-                setError(-11);
+                if ((myTokenIX + theValueLength + 1) > MsgTokenMaxIX) // add 1 for the separator
+                {
+                    setError(-12);
+                }
+                else
+                {
+                    memcpy(&myTokenValue[myTokenIX], theValueArray, theValueLength);
+                    tokenCount ++;
+                    myTokenIX = myTokenIX + theValueLength + 1;
+                }
             }
         }
     }
 }
 
-//  Print a character to the serial port, optionally as HEX
 void LD_MSG::addValue(int theInt, char *theFormat)
 {
     char myValue[5];
     char myFormat[5];
-    String myUnit;
-    String myStr = StrNull;
-
-    myUnit = unit();
     setCurrFunction(62);
     if (isActive())
     {
-        int i;
-        for (i=0; i<6; i++)
-        {
-            myFormat[i] = *(theFormat + i);
-        }
+        memcpy(&myFormat, theFormat, 5);
         sprintf(myValue, myFormat, theInt);
-        myStr.concat(myValue);
-        if ( (myUnit.length() + myOriginator.length() + myMsgNo.length() + myTokenValue.length() + myStr.length()) > MessageMax)
+        if ( (13 + (sizeof(myTokenValue)) + sizeof(myValue)) > MessageMax)
         {
             setError(-15);
         } 
         else
         {
-            if (tokenCount < MsgTokenMaxIX)
-            {
-                myTokenValue.concat(myValue);
-                myTokenValue.concat(MsgValueSep);
-                tokenCount ++;
-            } 
+            if (tokenCount > MsgTokenMax)
+            {   
+                setError(-16);
+            }
             else
             {
-                setError(-16);
+                if ((myTokenIX + sizeof(myValue) + 1) > MsgTokenMaxIX) // add 1 for the separator
+                {
+                    setError(-12);
+                }
+                else
+                {
+                    memcpy(&myTokenValue[myTokenIX], &myValue, sizeof(myValue));
+                    tokenCount ++;
+                    myTokenIX = myTokenIX + sizeof(myValue) + 1;
+                }
             }
         }
     }

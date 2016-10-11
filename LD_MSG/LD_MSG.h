@@ -46,25 +46,36 @@ const char MsgSevErrFatal[] = "4";
 
 
 // Message Parsing
-const char MsgValueSep[] = "^";
-const char MsgToken[] = ":$:";
-const byte MsgTokenLen = 3; // refers to the length of the above string
-const byte MsgTokenMaxIX = 8;  // The maximum allowable index value for the array msgTknValues.
+static char MsgValueSep[] = "^";
+static char MsgToken[] = ":$:";
+static byte MsgTokenLen = 3; // refers to the length of the above string
+static byte MsgTokenMax = 8;
+static byte MsgTokenMaxIX = 31;
+static byte MessageMax = 64;
 
 class LD_MSG : public LD_BASE
 {
     
+    boolean myVerbose = false;
+    byte tokenCount = 0;
+    byte myMsgDevice;
+    byte myMsgMethod;
+    int myMsgNo;
+    char myTokenValue[32];
+    byte myTokenIX;
+
 public:
-    LD_MSG(String theUnit, byte theDeviceNumber, boolean serialEnabled);
+    LD_MSG(byte theUnit, byte theDeviceNumber, boolean serialEnabled);
     ~LD_MSG();
     void setVerbose(boolean isVerbose);
     boolean isVerbose();
-    String msgUnit();
-    String msgOriginator();
-    String msgNo();
-    String tokenValue();
-    void newMessage(String theOriginator, int theMsgNo);
-    void addValue(String theString);
+    byte msgDevice();
+    byte msgMethod();
+    int msgNo();
+    byte tokenValue(char *theCharArray);
+    byte tokenLen();
+    void newMessage(byte theDevice, byte theMethod, int theMsgNo);
+    void addValue(char *theValueArray, byte theValueLength);
     void addValue(int theInt, char *theFormat);
 };
 
