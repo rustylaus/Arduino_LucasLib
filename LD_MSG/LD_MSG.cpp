@@ -17,8 +17,8 @@
 //  Constructor
 LD_MSG::LD_MSG(byte theUnit, byte theDeviceNumber, boolean serialEnabled)
 {
-    setCurrFunction(51);
-    deviceInit(theUnit, theDeviceNumber, serialEnabled);
+    setCurrFunction(99);
+    deviceBegin(theUnit, theDeviceNumber, serialEnabled);
     setEnabled(true);
     myMsgDevice = 0;
     myMsgMethod = 0;
@@ -32,45 +32,41 @@ LD_MSG::LD_MSG(byte theUnit, byte theDeviceNumber, boolean serialEnabled)
 //  Destructor
 LD_MSG::~LD_MSG()
 {
-    setCurrFunction(52);
+    setCurrFunction(0);
     /* nothing to do */
 }
 
 //  Sets the verbose setting
 void LD_MSG::setVerbose(boolean isVerbose)
 {   
-    setCurrFunction(54);
+    setCurrFunction(98);
     myVerbose = isVerbose;
 }
 
 // retrieves the current verbose setting
 boolean LD_MSG::isVerbose()
 {   
-    setCurrFunction(55);
     return(myVerbose);
 }
 
 byte LD_MSG::msgDevice()
 {
-    setCurrFunction(56);
     return(myMsgDevice);
 }
 
 byte LD_MSG::msgMethod()
 {
-    setCurrFunction(57);
     return(myMsgMethod);
 }
 
 int LD_MSG::msgNo()
 {
-    setCurrFunction(58);
     return(myMsgNo);
 }
 
 byte LD_MSG::tokenValue(char *theCharArray)
 {
-    setCurrFunction(59);
+    setCurrFunction(97);
     int i = 0;
     while (myTokenValue[i] != MyNull && i < (MsgTokenMaxIX + 1))
     {
@@ -84,7 +80,6 @@ byte LD_MSG::tokenValue(char *theCharArray)
 
 byte LD_MSG::tokenLen()
 {
-    setCurrFunction(53);
     return(myTokenIX);
 }
 //  Print a string to the serial port
@@ -92,7 +87,7 @@ void LD_MSG::newMessage(byte theDevice, byte theMethod, int theMsgNo)
 {   
     char myValue[4];
 
-    setCurrFunction(60);
+    setCurrFunction(96);
     if (isActive()) 
     {
         myMsgDevice = theDevice;
@@ -107,7 +102,7 @@ void LD_MSG::newMessage(byte theDevice, byte theMethod, int theMsgNo)
 //  Print an integer to the serial port, optionally as DEC
 void LD_MSG::addValue(char *theValueArray, byte theValueLength)
 {
-    setCurrFunction(61);
+    setCurrFunction(95);
     if (isActive())
     {   
         // we do need a check to ensure the token length does not exceed the max message length
@@ -142,7 +137,7 @@ void LD_MSG::addValue(int theInt, char *theFormat)
 {
     char myValue[5];
     char myFormat[5];
-    setCurrFunction(62);
+    setCurrFunction(94);
     if (isActive())
     {
         memcpy(&myFormat, theFormat, 5);

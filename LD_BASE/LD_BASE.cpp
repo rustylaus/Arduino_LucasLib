@@ -58,12 +58,12 @@ boolean mySerialActive = false;
     LD_BASE::~LD_BASE()
     {
         /* nothing to do */
-        myCurrFunction = 1;
+        myCurrFunction = 0;
     }
     //  Initialiser
-    void LD_BASE::deviceInit(byte theUnit, byte theDeviceNumber, boolean serialEnabled)
+    void LD_BASE::deviceBegin(byte theUnit, byte theDeviceNumber, boolean serialEnabled)
     {
-        myCurrFunction = 2;
+        myCurrFunction = 127;
         myUnit = theUnit;
         myDeviceNumber = theDeviceNumber;
         mySerialEnabled = serialEnabled;
@@ -73,7 +73,7 @@ boolean mySerialActive = false;
     //  Get Unit Number
     byte LD_BASE::unit()
     {
-        myCurrFunction = 3;
+        myCurrFunction = 126;
         if (myDeviceInitialised)
         {
             return(myUnit);
@@ -87,7 +87,7 @@ boolean mySerialActive = false;
     //  Get Device Number
     byte LD_BASE::device()
     {
-        myCurrFunction = 4;
+        myCurrFunction = 125;
         if (myDeviceInitialised)
         {
             return(myDeviceNumber);
@@ -101,20 +101,20 @@ boolean mySerialActive = false;
     //  Set Current Function
     void LD_BASE::setCurrFunction(byte theFunction)
     {
+        myCurrFunction = 124;
         myCurrFunction = theFunction;
     }
 
     //  Get Current Function
     byte LD_BASE::currFunction()
     {
-        myCurrFunction = 5;
         return(myCurrFunction);
     }
 
     //  Set Device Enabled
     void LD_BASE::setEnabled(boolean isEnabled)
     {
-        myCurrFunction = 6;
+        myCurrFunction = 123;
         myEnabled = isEnabled;
         if (!isEnabled)
         {
@@ -125,14 +125,13 @@ boolean mySerialActive = false;
     //  Returns whether the device is enabled
     boolean LD_BASE::isEnabled()
     {
-        myCurrFunction = 7;
         return(myEnabled);
     }
 
     //  Similar to isEnabled, except that it returns 1 or zero rather than true or false.
     byte LD_BASE::enabled()
     {
-        myCurrFunction = 8;
+        myCurrFunction = 122;
         if (isEnabled())
         {
             return(1);
@@ -146,7 +145,7 @@ boolean mySerialActive = false;
     //  Sets the active status
     void LD_BASE::setActive(boolean isActive)
     {
-        myCurrFunction = 9;
+        myCurrFunction = 121;
         if (myDeviceInitialised)
         {
             if (isEnabled())
@@ -167,14 +166,13 @@ boolean mySerialActive = false;
     //  Returns whether the device is active
     boolean LD_BASE::isActive()
     {
-        myCurrFunction = 10;
         return(myActive);
     }
 
     //  Similar to isActive, except that it returns 1 or zero rather than true or false.
     byte LD_BASE::active()
     {
-        myCurrFunction = 11;
+        myCurrFunction = 120;
         if (myActive)
         {
             return(1);
@@ -208,7 +206,7 @@ boolean mySerialActive = false;
     boolean LD_BASE::newError(boolean resetNewError)
     //  default:= resetNewError = true
     {
-        myCurrFunction = 12;
+        myCurrFunction = 119;
         boolean myNewErr = myNewError;
         if (resetNewError) { myNewError = false; }
         return (myNewErr);
@@ -218,7 +216,7 @@ boolean mySerialActive = false;
     byte LD_BASE::error(byte theIndex)
     //  default:= theIndex = 0
     {
-        myCurrFunction = 13;
+        myCurrFunction = 118;
         if (theIndex > -1 && theIndex < ErrorArraySize)
         {
             return(myError[theIndex]);
@@ -231,7 +229,7 @@ boolean mySerialActive = false;
     byte LD_BASE::errorFnc(byte theIndex)
     //  default:= theIndex = 0
     {
-        myCurrFunction = 14;
+        myCurrFunction = 117;
         if (theIndex > -1 && theIndex < ErrorArraySize)
         {
             return(myErrorFnc[theIndex]);
@@ -241,9 +239,9 @@ boolean mySerialActive = false;
     }
 
     //  Serial device initialisation
-    void LD_BASE::printOn(long thePortSpeed)
+    void LD_BASE::printBegin(long thePortSpeed)
     {
-        myCurrFunction = 15;
+        myCurrFunction = 115;
         // check that I am enabled first
         if (myDeviceInitialised)
         {
@@ -277,9 +275,9 @@ boolean mySerialActive = false;
     }
 
     //  Serial device off
-    void LD_BASE::printOff()
+    void LD_BASE::printEnd()
     {
-        myCurrFunction = 16;
+        myCurrFunction = 114;
         mySerialActive = false;
     }
 

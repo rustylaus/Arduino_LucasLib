@@ -27,47 +27,46 @@
 LD_COM::LD_COM(byte theUnit, byte theDeviceNumber, boolean serialEnabled, int theRxPort, int theTxPort)
     : xBee(theRxPort, theTxPort)
 {
-    setCurrFunction(31);
-    deviceInit(theUnit, theDeviceNumber, serialEnabled);
+    setCurrFunction(89);
+    deviceBegin(theUnit, theDeviceNumber, serialEnabled);
     setEnabled(true);
 }
 
 //  Destructor
 LD_COM::~LD_COM()
 {
-    setCurrFunction(32);
+    setCurrFunction(0);
     /* nothing to do */
 }
 
-void LD_COM::commInit(long thePortSpeed)
+void LD_COM::commBegin(long thePortSpeed, boolean logComms)
 {
-    setCurrFunction(33);
+    setCurrFunction(88);
     //xBee = SoftwareSerial xBee(theRxPort, theTxPort);
+    myLogComms = logComms;
     xBee.begin(thePortSpeed);
     setActive(true);
 }
 
 byte LD_COM::inputLen()
 {
-    setCurrFunction(34);
     return(myBuffLen);
 }
 
 char LD_COM::tokenChar(byte theIX)
 {
-    setCurrFunction(35);
     return(myToken[theIX]);
 }
 
 int LD_COM::tokenInt()
 {
-    setCurrFunction(36);
+    setCurrFunction(87);
     return((String(myToken).toInt()));
 }
 
 String LD_COM::tokenString()
 {   
-    setCurrFunction(37);
+    setCurrFunction(86);
     String s = StrNull;
     s.concat(myToken);
     return(s);
@@ -75,25 +74,21 @@ String LD_COM::tokenString()
 
 byte LD_COM::tokenLen()
 {
-    setCurrFunction(38);
     return(myTokenLen);
 }
 
 char LD_COM::dgType()
 {
-    setCurrFunction(39);
     return(myCommType);
 }
 
 byte LD_COM::MaxBuff()
 {
-    setCurrFunction(40);
     return(MyMaxBuff);
 }
 
 byte LD_COM::MaxToken()
 {
-    setCurrFunction(41);
     return(MyMaxToken);
 }
 
@@ -102,7 +97,7 @@ byte LD_COM::outputInit(char *theBuffer, byte theMaxIX)
 // returns the length of the buffer as confirmation, or an error (<0)
 {
     int i;
-    setCurrFunction(42);
+    setCurrFunction(85);
 
     if (theMaxIX > MyMaxBuff)
     {
@@ -124,7 +119,7 @@ byte LD_COM::outputFill(char *theSource, char *theBuff, byte theBuffOffset, byte
 // This does a straight copy of the theSource to the output buffer after some checking
 {
     byte i;
-    setCurrFunction(43);
+    setCurrFunction(84);
 
     // if the device is active...
     if (isActive())
@@ -156,7 +151,7 @@ byte LD_COM::outputBuild(char *theSource, char *theBuff, byte theLen)
 // This does a copy of the source to the output buffer, but also maintains an index of where the next available 
 // byte is located in the buffer - returns the number of bytes copied
 {
-    setCurrFunction(44);
+    setCurrFunction(83);
     myOC = 0;
     // go fill the output buffer after checking it will not overflow
     myOC = outputFill(theSource, theBuff, myOutputIX, theLen);  // returns an error (<0) or the number of bytes copied
@@ -176,7 +171,7 @@ byte LD_COM::outputSend(char *theBuff, char theType, byte theLength)
     
     char lenF[4];
     
-    setCurrFunction(45);
+    setCurrFunction(82);
     myOC = 0;
 
     if (isActive())
@@ -208,6 +203,7 @@ byte LD_COM::outputSend(char *theBuff, char theType, byte theLength)
         
         noInterrupts();
         // send Datagram Start
+        if (myLogComms) { print('$',false); }
         outputSendChar(DgStart);
         // send the datagram length
         for (i = 0; i < 4; i++) 
@@ -235,6 +231,7 @@ byte LD_COM::outputSend(char *theBuff, char theType, byte theLength)
         j ++;
         //if (_logComms) { _ser.print("'==>>>", true); }
         interrupts();
+        if (myLogComms) { print(" ",true); }
         myOC = j;
     } 
     else
@@ -248,15 +245,26 @@ byte LD_COM::outputSend(char *theBuff, char theType, byte theLength)
 
 void LD_COM::outputSendChar(char theChar) 
 {
-    setCurrFunction(46);
+    setCurrFunction(81);
     myOC = 0;
+    if (myLogComms)
+    {
+        if (theChar < ' ')
+        {
+            print('.', false);
+        }
+        else
+        {
+            print(theChar, false);
+        }
+    }
     xBee.write(theChar);
     //if (_logComms) { _ser.print(theChar); }
 }
 
 int LD_COM::inputAvailable()
 {
-    setCurrFunction(47);
+    setCurrFunction(80);
     myOC = 0;
     return(xBee.available());
 }
@@ -284,9 +292,9 @@ byte LD_COM::inputRecv(boolean theDiscard)
     //String strVal = StrNull;
     //char bufferInput[65];   // only used by this routine - the output is placed in myBuff
 
-    setCurrFunction(48);
+    setCurrFunction(79);
     myOC = 0;
-    print("!", true);
+    if (myLogComms) { print("!", true); }
 
     for (i = 0; i < MyMaxBuff; i++) 
     {
@@ -309,10 +317,19 @@ byte LD_COM::inputRecv(boolean theDiscard)
             //delay(2000);
             if (c > 0) 
             {
-                print(".", false);
                 //delay(100);
                 commChar = xBee.read();                                              // Receive a single character from the software serial port
-                print(commChar, false);
+                if (myLogComms)
+                {
+                    if (commChar < ' ')
+                    {
+                        print('.', false);
+                    }
+                    else
+                    {
+                        print(commChar, false);
+                    }
+                }
                 /*
                 if (_logComms) {
                 _ser.print(_commChar);
@@ -337,7 +354,7 @@ byte LD_COM::inputRecv(boolean theDiscard)
         //if (_logComms) { _ser.print("'."); }
         //_ser.print("<");
         //_ser.print(i, true);
-        print(" ",true);
+        if (myLogComms) { print(" ",true); }
         
         if (i < MyMaxBuff) 
         {
@@ -407,7 +424,7 @@ byte LD_COM::tokenGetLen(int theLength, int theOffset)
 
     byte i;
 
-    setCurrFunction(49);
+    setCurrFunction(78);
     myOC = 0;
 
     if (theOffset == 999) { theOffset = myNextOffset; }
@@ -464,7 +481,7 @@ byte LD_COM::tokenGetSep(int theOffset)
 {
     byte i;
 
-    setCurrFunction(50);
+    setCurrFunction(76);
     myOC = 0;
     
     if (theOffset == 999) { theOffset = myNextOffset; }

@@ -25,8 +25,8 @@
 LD_QUE::LD_QUE(byte theUnit, byte theDeviceNumber, boolean serialEnabled, int RAMport)
     : fram(RAMport)
 {
-    setCurrFunction(65);
-    deviceInit(theUnit, theDeviceNumber, serialEnabled);
+    setCurrFunction(69);
+    deviceBegin(theUnit, theDeviceNumber, serialEnabled);
     myRAMport = RAMport;
     setEnabled(true);
 }
@@ -34,7 +34,7 @@ LD_QUE::LD_QUE(byte theUnit, byte theDeviceNumber, boolean serialEnabled, int RA
 //  Destructor
 LD_QUE::~LD_QUE()
 {
-    setCurrFunction(66);
+    setCurrFunction(0);
     /* nothing to do */
 }
 
@@ -79,10 +79,10 @@ byte LD_QUE::NoSlots()
 }
 
 //  Queue initialisation - returns the number of bad blocks
-byte LD_QUE::initQ(boolean fullInit)
+byte LD_QUE::queueBegin(boolean fullInit)
 {
 
-    setCurrFunction(67);
+    setCurrFunction(68);
 
     if (fram.begin()) 
     {  
@@ -222,7 +222,7 @@ byte LD_QUE::initQ(boolean fullInit)
 //  Saves the Queue header to non-volatile storage
 byte LD_QUE::saveQ()
 {   
-    setCurrFunction(68);
+    setCurrFunction(67);
     uint16_t addr = MyHeaderSlot;
 
     if (isActive()) 
@@ -298,7 +298,7 @@ byte LD_QUE::writeQitem(char *theData, byte theLength, char theType)
     
     // theLength is the length of the structure to be written - we need to add the overhead to it.  The overhead is currently 6 (SRAMoverhead).
 
-    setCurrFunction(69);
+    setCurrFunction(66);
     byte indexToUse = 0;
     unsigned int addrToUse = 0;
     char inUse[2];
@@ -406,7 +406,7 @@ byte LD_QUE::writeQitem(char *theData, byte theLength, char theType)
 //  
 byte LD_QUE::readQaddr(DEQUEUE_ITEM *myItem)
 {   
-    setCurrFunction(70);
+    setCurrFunction(65);
 
     if (isActive()) 
     {
@@ -497,7 +497,7 @@ byte LD_QUE::readQaddr(DEQUEUE_ITEM *myItem)
 //  
 byte LD_QUE::readItem(uint16_t addr, char *buff, int len)
 {
-    setCurrFunction(71);
+    setCurrFunction(64);
     if (isActive())
     {   
         int i;
@@ -516,7 +516,7 @@ byte LD_QUE::readItem(uint16_t addr, char *buff, int len)
 //  Returns the number of items currently queued
 byte LD_QUE::currItemCount()
 {
-    setCurrFunction(72);
+    setCurrFunction(63);
     if (isActive())
     {   
         return(myCountCurr);

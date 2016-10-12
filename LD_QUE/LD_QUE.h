@@ -42,7 +42,7 @@ class LD_QUE : public LD_BASE
 public:
     LD_QUE(byte theUnit, byte theDeviceNumber, boolean serialEnabled, int RAMport);
     ~LD_QUE();
-    byte initQ(boolean fullInit = false);                           // returns bad blocks found in FRAM
+    byte queueBegin(boolean fullInit = false);                           // returns bad blocks found in FRAM
     byte saveQ();
     byte currItemCount();
     byte writeQitem(char *theData, byte theLength, char theType);

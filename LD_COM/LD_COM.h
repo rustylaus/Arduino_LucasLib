@@ -31,11 +31,12 @@ class LD_COM : public LD_BASE
     byte myOutputIX = 0;
     byte myOC = 0;
     char myCommType = '*';
+    boolean myLogComms = false;
 
 public:
     LD_COM(byte theUnit, byte theDeviceNumber, boolean serialEnabled, int theRxPort, int theTxPort);
     ~LD_COM();
-    void commInit(long thePortSpeed);
+    void commBegin(long thePortSpeed, boolean logComms = false);
     byte outputInit(char *theBuffer, byte theMaxIX);
     byte outputBuild(char *theSource, char *theBuff, byte theLen);                          // commOutputBld
     byte outputFill(char *theSource, char *theBuff, byte theBuffOffset, byte theLength);

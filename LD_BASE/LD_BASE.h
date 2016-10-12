@@ -31,7 +31,7 @@ public:
 
     LD_BASE(); // Constructor
     ~LD_BASE();                                         // De-Constructor
-    void deviceInit(byte theUnit, byte theDeviceNumber, boolean serialEnabled); // base initialiser
+    void deviceBegin(byte theUnit, byte theDeviceNumber, boolean serialEnabled); // base initialiser
     byte unit();                                      // gets the unit number
     byte device();                                      // gets the device number
     void setCurrFunction(byte theFunction);             // sets the current function number
@@ -48,8 +48,8 @@ public:
     boolean newError(boolean resetNewError = true);     // Indicates if a new error has just occurred
     byte error(byte theIndex = 0);                      // returns the error indicated by theIndex, the latest error being the default
     byte errorFnc(byte theIndex = 0);                   // returns the error function indicated by the index    
-    void printOn(long thePortSpeed);
-    void printOff();
+    void printBegin(long thePortSpeed);
+    void printEnd();
     void print(String theString, boolean newLine = false);                              // Prints a String
     void print(int theInt, boolean newLine = false, boolean isDec = false);             // Prints an integer, optionally as DEC
     void print(unsigned int theInt, boolean newLine = false, boolean isDec = false);    // Prints an unsigned integer, optionally as DEC
