@@ -37,6 +37,7 @@ public:
     LD_COM(byte theUnit, byte theDeviceNumber, boolean serialEnabled, int theRxPort, int theTxPort);
     ~LD_COM();
     void commBegin(long thePortSpeed, boolean logComms = false);
+    void commListen();
     byte outputInit(char *theBuffer, byte theMaxIX);
     byte outputBuild(char *theSource, char *theBuff, byte theLen);                          // commOutputBld
     byte outputFill(char *theSource, char *theBuff, byte theBuffOffset, byte theLength);

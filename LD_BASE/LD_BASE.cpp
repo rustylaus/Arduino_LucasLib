@@ -33,6 +33,7 @@
 */
 
 boolean mySerialActive = false;
+char fHxChr[3];
 
     //  Constructor
     LD_BASE::LD_BASE()
@@ -46,6 +47,7 @@ boolean mySerialActive = false;
         myDeviceNumber = 0;
         mySerialEnabled = false;
         mySerialActive = false;
+        myTotalErrors = 0;
 
         for (i = 0; i < ErrorArraySize; i++)
         {
@@ -183,20 +185,32 @@ boolean mySerialActive = false;
         }
     }
 
+    //  Returns the total number of errors since startup
+    int LD_BASE::totalErrors(boolean resetToZero)
+    {   
+        int i;
+        i = myTotalErrors;
+        if (resetToZero) { myTotalErrors = 0; }
+        return(i);
+    }
+
     //  Indicates a new error
     byte LD_BASE::setError(byte theErrorNo)
     {
+        /*
         print("!!");
-        print(theErrorNo);
-        print("!!", true);
+        print((256 - theErrorNo));
+        print("@");
+        print(myCurrFunction, true);
+        */
         // Update the structure first
         //myError[2] = myError[1];
         myError[1] = myError[0];
-        myError[0] = abs(theErrorNo);
+        myError[0] = (256 - theErrorNo);
         //myErrorFnc[2] = myErrorFnc[1];
         myErrorFnc[1] = myErrorFnc[0];
         myErrorFnc[0] = myCurrFunction;
-
+        myTotalErrors ++;
         myNewError = true;
 
         return(theErrorNo);
@@ -290,12 +304,11 @@ boolean mySerialActive = false;
             if (newLine) 
             {
                 Serial.println(theString);
-                delay(200);
+                delay(50);
             } else 
             {
                 Serial.print(theString);
             }
-            delay(10);
         }
     }
 
@@ -314,6 +327,7 @@ boolean mySerialActive = false;
                 {
                     Serial.println(theInt);
                 }
+                delay(10); 
             } else 
             {
                 if (isDec)
@@ -324,7 +338,6 @@ boolean mySerialActive = false;
                     Serial.print(theInt);
                 }
             }
-            delay(10); 
         }
     }
 
@@ -343,6 +356,7 @@ boolean mySerialActive = false;
                 {
                     Serial.println(theInt);
                 }
+                delay(10); 
             } else 
             {
                 if (isDec)
@@ -353,7 +367,6 @@ boolean mySerialActive = false;
                     Serial.print(theInt);
                 }
             }
-            delay(10); 
         }
     }
 
@@ -367,22 +380,26 @@ boolean mySerialActive = false;
             {
                 if (isHex)
                 {
-                    Serial.println(theChar, HEX);
+                    sprintf(fHxChr,"%02X",theChar);
+                    Serial.print(fHxChr[0]);
+                    Serial.println(fHxChr[1]);
                 } else
                 {
                     Serial.println(theChar);
                 }
+                delay(10); 
             } else 
             {
                 if (isHex)
                 {
-                    Serial.print(theChar, HEX);                
+                    sprintf(fHxChr,"%02X",theChar);
+                    Serial.print(fHxChr[0]);
+                    Serial.print(fHxChr[1]);              
                 } else
                 {
                     Serial.print(theChar);
                 }
             }
-            delay(10); 
         }
     }
 

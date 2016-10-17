@@ -25,6 +25,7 @@ class LD_BASE
     boolean myNewError = false;
     byte myError[ErrorArraySize];
     byte myErrorFnc[ErrorArraySize];
+    int myTotalErrors = 0;
     char fmtByteBuff[8];
 
 public:
@@ -44,6 +45,7 @@ public:
     void setActive(boolean isActive);                   // sets the active status
     boolean isActive();                                 // returns whether the device is active
     byte active();                                      // returns 1 if active or 0 if not
+    int totalErrors(boolean resetToZero = false);               // returns the number of errors, and resets the count if requested
     byte setError(byte theError);                       // indicates a new error
     boolean newError(boolean resetNewError = true);     // Indicates if a new error has just occurred
     byte error(byte theIndex = 0);                      // returns the error indicated by theIndex, the latest error being the default

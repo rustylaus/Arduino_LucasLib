@@ -41,11 +41,35 @@ LD_COM::~LD_COM()
 
 void LD_COM::commBegin(long thePortSpeed, boolean logComms)
 {
-    setCurrFunction(88);
+    setCurrFunction(89);
     //xBee = SoftwareSerial xBee(theRxPort, theTxPort);
     myLogComms = logComms;
+    /*
+    if (myLogComms)
+    {
+        print("Log comms active.");
+    }
+    else
+    {
+        print("Log comms not active");
+    }
+    */
     xBee.begin(thePortSpeed);
     setActive(true);
+}
+
+void LD_COM::commListen()
+{
+    setCurrFunction(88);
+        // if the device is active...
+    if (isActive())
+    {   
+        xBee.listen();
+    }
+    else 
+    {
+        setError(-16);
+    }
 }
 
 byte LD_COM::inputLen()
@@ -61,7 +85,12 @@ char LD_COM::tokenChar(byte theIX)
 int LD_COM::tokenInt()
 {
     setCurrFunction(87);
-    return((String(myToken).toInt()));
+    //print("Tkn=");
+    //printArray(&myToken[0],5,true);
+    //print("=>");
+    //int i = atoi(myToken);
+    //print(i, true);
+    return((atoi(myToken)));
 }
 
 String LD_COM::tokenString()
@@ -137,7 +166,12 @@ byte LD_COM::outputFill(char *theSource, char *theBuff, byte theBuffOffset, byte
                 *(theBuff + theBuffOffset + i) = *(theSource + i);
             }
             // return the bytes copied
-            return(i + 1);
+            /*
+            print("OutputCopy=");
+            printArray((theBuff+theBuffOffset), theLength, true);
+            print(".");
+            */
+            return(theLength);
         }
 
     } 
@@ -203,7 +237,7 @@ byte LD_COM::outputSend(char *theBuff, char theType, byte theLength)
         
         noInterrupts();
         // send Datagram Start
-        if (myLogComms) { print('$',false); }
+        if (myLogComms) { print(" ", true); print('$',false); }
         outputSendChar(DgStart);
         // send the datagram length
         for (i = 0; i < 4; i++) 
@@ -294,7 +328,7 @@ byte LD_COM::inputRecv(boolean theDiscard)
 
     setCurrFunction(79);
     myOC = 0;
-    if (myLogComms) { print("!", true); }
+    if (myLogComms) { print("!"); }
 
     for (i = 0; i < MyMaxBuff; i++) 
     {

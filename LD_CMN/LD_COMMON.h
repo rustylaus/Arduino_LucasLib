@@ -23,6 +23,9 @@ static byte DevStatOn = 1;
 // True and False Values
 static char ChTrue = 'T';
 static char ChFalse = 'F';
+// Yes and No Values
+static char ChYes = 'Y';
+static char ChNo = 'N';
 // Misc Values
 static char MyAt = '@';
 

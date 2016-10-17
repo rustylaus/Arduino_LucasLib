@@ -46,7 +46,7 @@ const char MsgSevErrFatal[] = "4";
 
 
 // Message Parsing
-static char MsgValueSep[] = "^";
+static char MsgValueSep = '^';
 static char MsgToken[] = ":$:";
 static byte MsgTokenLen = 3; // refers to the length of the above string
 static byte MsgTokenMax = 8;

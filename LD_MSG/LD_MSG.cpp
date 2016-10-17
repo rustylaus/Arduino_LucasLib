@@ -106,7 +106,7 @@ void LD_MSG::addValue(char *theValueArray, byte theValueLength)
     if (isActive())
     {   
         // we do need a check to ensure the token length does not exceed the max message length
-        if ( (13 + (sizeof(myTokenValue)) + theValueLength) > MessageMax)
+        if ( (13 + (sizeof(myTokenValue)) + theValueLength + 1) > MessageMax)
         {
             setError(-10);
         } 
@@ -118,15 +118,18 @@ void LD_MSG::addValue(char *theValueArray, byte theValueLength)
             }
             else
             {
-                if ((myTokenIX + theValueLength + 1) > MsgTokenMaxIX) // add 1 for the separator
+                if ((myTokenIX + theValueLength + 2) > MsgTokenMaxIX) // add 1 for the separator
                 {
                     setError(-12);
                 }
                 else
                 {
-                    memcpy(&myTokenValue[myTokenIX], theValueArray, theValueLength);
+                    memcpy(&myTokenValue[myTokenIX], theValueArray, (theValueLength - 1));
                     tokenCount ++;
-                    myTokenIX = myTokenIX + theValueLength + 1;
+                    myTokenIX = myTokenIX + (theValueLength-1);
+                    myTokenValue[myTokenIX] = MsgValueSep;
+                    myTokenIX++;
+                    myTokenValue[myTokenIX] = MyNull;
                 }
             }
         }
@@ -142,7 +145,7 @@ void LD_MSG::addValue(int theInt, char *theFormat)
     {
         memcpy(&myFormat, theFormat, 5);
         sprintf(myValue, myFormat, theInt);
-        if ( (13 + (sizeof(myTokenValue)) + sizeof(myValue)) > MessageMax)
+        if ( (13 + (sizeof(myTokenValue)) + sizeof(myValue) + 1) > MessageMax)
         {
             setError(-15);
         } 
@@ -154,17 +157,29 @@ void LD_MSG::addValue(int theInt, char *theFormat)
             }
             else
             {
-                if ((myTokenIX + sizeof(myValue) + 1) > MsgTokenMaxIX) // add 1 for the separator
+                if ((myTokenIX + sizeof(myValue) + 2) > MsgTokenMaxIX) // add 1 for the separator
                 {
                     setError(-12);
                 }
                 else
                 {
-                    memcpy(&myTokenValue[myTokenIX], &myValue, sizeof(myValue));
+                    memcpy(&myTokenValue[myTokenIX], &myValue, ((sizeof(myValue))-1));
                     tokenCount ++;
-                    myTokenIX = myTokenIX + sizeof(myValue) + 1;
-                }
+                    myTokenIX = myTokenIX + ((sizeof(myValue)) - 1);
+                    myTokenValue[myTokenIX] = MsgValueSep;
+                    myTokenIX++;
+                    myTokenValue[myTokenIX] = MyNull;
+                 }
             }
         }
+        /*
+        print("Msg=");
+        print(myMsgNo);
+        print(",TknIX=");
+        print(myTokenIX);
+        print(",Tkn='");
+        printArray(myTokenValue, myTokenIX, true);
+        print("'.", true);
+        */
     }
 }

@@ -15,7 +15,7 @@
 typedef struct 
 {
     char type;
-    byte len;
+    int len;
     unsigned int addr;
 } DEQUEUE_ITEM;
 
@@ -47,7 +47,7 @@ public:
     byte currItemCount();
     byte writeQitem(char *theData, byte theLength, char theType);
     byte readQaddr(DEQUEUE_ITEM *myItem);
-    byte readItem(uint16_t addr, char *buff, int len);              // copies the item from the RAM address into the buffer for the 
+    byte readItem(uint16_t addr, char *buff, byte len);              // copies the item from the RAM address into the buffer for the 
                                                                     // specified length, & returns length of item copied.
                                                                     // NB: readQ returns the address in DEQUEUE_ITEM->addr                
     byte NTwrite();                                                  // Next to write - zero relative slot number

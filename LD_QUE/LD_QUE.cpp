@@ -214,8 +214,8 @@ byte LD_QUE::queueBegin(boolean fullInit)
         }
     }
     saveQ();
-    print("done. Badblocks=");
-    print(BadBlockCount, true);
+    //print("done. Badblocks=");
+    //print(BadBlockCount, true);
     return(BadBlockCount);
 }
 
@@ -271,11 +271,23 @@ byte LD_QUE::saveQ()
         fram.writeEnable(true);
         fram.write(addr, (uint8_t *)myValue, 3);
         fram.writeEnable(false);
-        addr += 4;
+        addr += 3;
         myValue[0] = '<'; myValue[1] = 'E'; myValue[2] = 'N'; myValue[3] = 'D';
         fram.writeEnable(true);
         fram.write(addr, (uint8_t *)myValue, 4);
         fram.writeEnable(false);
+
+        /*
+        byte i; char c;
+        print("FRAM Svd Hdr = '");
+        for (i = 0; i < 36; i++)
+        {
+            addr = i;
+            c = fram.read8(addr);
+            print(c);
+        }
+        print("'", true);
+        */
     } 
     else 
     {
@@ -308,17 +320,15 @@ byte LD_QUE::writeQitem(char *theData, byte theLength, char theType)
     myType[0] = theType;
 
     if (isActive()) 
-    {
+    {   
         // check the length parm
         if (theLength < 1 || (theLength + RAMoverhead) > MyBlockSize) { return(setError(-21)); }
-
         // if ixWriteNext = ixReadNext AND count of items not zero, then Q is full - increment countQfull & exit with -22
         if (myNTwrite == myNTread && myCountCurr > 0) 
         {
             myCountOverflow++;
             return(setError(-20));
         }
-            
         // get the index to use
         indexToUse = myNTwrite;
         // check if the block is in use and return an error if it is
@@ -339,10 +349,11 @@ byte LD_QUE::writeQitem(char *theData, byte theLength, char theType)
             inUse[0] = fram.read8(addrToUse);
             // now check again
         }
+        //print(1);
         interrupts();
-        // if we dropped through because it is in use, we cannot proceed.
-        if (inUse[0] == 'Y') { return(setError(-21)); }
-        
+        // if we dropped through because it is in use, we cannot proceed - THIS ERROR SHOULD NEVER HAPPEN - Removing check
+        //if (inUse[0] == 'Y') { return(setError(-21)); }
+        //print(2);
         // OK, all is in order - we are set to go...
         
         // increment the count of items
@@ -355,12 +366,14 @@ byte LD_QUE::writeQitem(char *theData, byte theLength, char theType)
         myNTwrite ++;
         // if ixWriteNext > ixMax then ixWriteNext = Start Slot;
         if (myNTwrite > MyDgEndSlot) { myNTwrite = MyDgStartSlot; }
-        /* DEBUG
+        
+        /*
         print("queueWrite:: Addr = ");
         print(addrToUse);
         print(", type = ");
         print(myType[0],true);
         */
+
         // set block in use
         noInterrupts();
         inUse[0] = 'Y';
@@ -415,7 +428,7 @@ byte LD_QUE::readQaddr(DEQUEUE_ITEM *myItem)
         unsigned int addrToUse = 0;
         char inUse[2];
         char myValue[4];
-        String strVal = StrNull;
+        //String strVal = StrNull;
 
         myItem->type = MyNull;
         myItem->len = 0;  // also used to return an outcome/error - if negative, then it is an error
@@ -465,9 +478,9 @@ byte LD_QUE::readQaddr(DEQUEUE_ITEM *myItem)
         // retrieve and store the stream length
         readItem(addrToUse, &myValue[0], 3);
         myValue[4] = MyNull;
-        strVal = StrNull;
-        strVal.concat(myValue);
-        myItem->len = strVal.toInt();
+        //strVal = StrNull;
+        //strVal.concat(myValue);
+        myItem->len = atoi(myValue);
         addrToUse +=3;
         
         // retrieve and store the type at an incremented address
@@ -495,16 +508,22 @@ byte LD_QUE::readQaddr(DEQUEUE_ITEM *myItem)
 }
 
 //  
-byte LD_QUE::readItem(uint16_t addr, char *buff, int len)
+byte LD_QUE::readItem(uint16_t addr, char *buff, byte len)
 {
     setCurrFunction(64);
     if (isActive())
     {   
         int i;
+        /*
+        print("readItem: Len=");
+        print(len);
+        print(", Val='");*/
         for (i = 0; i < len; i++)
         {
             *(buff + i) = fram.read8(addr + i);
+            //print(*(buff + i));
         }
+        //print("'", true);
         return(i + 1);
     } 
     else 
