@@ -435,6 +435,8 @@ char fHxChr[3];
     }
     */
 
+#ifdef LD_ENABLE_ERR_DEBUG
+
     void LD_BASE::dumpErrInfo(char *buff,  byte theStartOffset)
     // buffer needs to be 43 chars, including terminating Null
     {
@@ -477,6 +479,10 @@ char fHxChr[3];
         */
     }
 
+#endif
+
+#ifdef LD_ENABLE_DEV_DEBUG
+
     void LD_BASE::dumpDevInfo(char *buff)
     // this routine requires a 85 char buffer to be passed
     {
@@ -510,3 +516,5 @@ char fHxChr[3];
         *(buff + p) = mySc; p ++;
         dumpErrInfo(buff, p);   
     }
+
+#endif

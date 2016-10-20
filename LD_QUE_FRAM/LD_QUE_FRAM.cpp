@@ -1,28 +1,11 @@
-#include <LD_QUE.h>
+#include <LD_QUE_FRAM.h>
 
 /*
-    LD_QUE(String theUnit, byte theDeviceNumber, boolean serialEnabled, int RAMport);
-    ~LD_QUE();
-    byte initQ(boolean fullInit = false);                           // returns bad blocks found in FRAM
-    byte saveQ();
-    byte currItemCount();
-    byte writeQitem(char *theData, byte theLength, char theType);
-    byte readQaddr(DEQUEUE_ITEM *myItem);
-    byte readItem(uint16_t addr, char *buff, int len);              // copies the item from the RAM address into the buffer for the 
-                                                                    // specified length, & returns length of item copied.
-                                                                    // NB: readQ returns the address in DEQUEUE_ITEM->addr                
-    int NTwrite();                                                  // Next to write - zero relative slot number
-    int NTread();                                                   // Next to read - relative slot number
-    byte CountCurr();                                               // Number of items in the buffer
-    byte CountCurrMax();                                            // Maximum items ever Qd in the buffer this run
-    byte CountOverflow();                                           // The number of times the buffer has been full
-    int CountQd();                                                  // The number of items that has been queued in the buffer
-    int CountDeQd();                                                // The number of items that have been dequeued in the buffer
-    byte NoSlots();                                                 // The maximum number of available slots in the queue          
+          
 */
 
 //  Constructor
-LD_QUE::LD_QUE(byte theUnit, byte theDeviceNumber, boolean serialEnabled, int RAMport)
+LD_QUE_FRAM::LD_QUE_FRAM(byte theUnit, byte theDeviceNumber, boolean serialEnabled, int RAMport)
     : fram(RAMport)
 {
     setCurrFunction(69);
@@ -32,54 +15,54 @@ LD_QUE::LD_QUE(byte theUnit, byte theDeviceNumber, boolean serialEnabled, int RA
 }
 
 //  Destructor
-LD_QUE::~LD_QUE()
+LD_QUE_FRAM::~LD_QUE_FRAM()
 {
     setCurrFunction(0);
     /* nothing to do */
 }
 
-byte LD_QUE::NTwrite()
+byte LD_QUE_FRAM::NTwrite()
 {
     return(myNTwrite);
 }
 
-byte LD_QUE::NTread()
+byte LD_QUE_FRAM::NTread()
 {
     return(myNTread);
 }
 
-byte LD_QUE::CountCurr()
+byte LD_QUE_FRAM::CountCurr()
 {
     return(myCountCurr);
 }
 
-byte LD_QUE::CountCurrMax()
+byte LD_QUE_FRAM::CountCurrMax()
 {
     return(myCountCurrMax);
 }
 
-byte LD_QUE::CountOverflow()
+byte LD_QUE_FRAM::CountOverflow()
 {
     return(myCountOverflow);
 }
 
-int LD_QUE::CountQd()
+int LD_QUE_FRAM::CountQd()
 {
     return(myCountQd);
 }
 
-int LD_QUE::CountDeQd()
+int LD_QUE_FRAM::CountDeQd()
 {
     return(myCountDeQd);
 }
 
-byte LD_QUE::NoSlots()
+byte LD_QUE_FRAM::NoSlots()
 {
     return(MyNoSlots);
 }
 
 //  Queue initialisation - returns the number of bad blocks
-byte LD_QUE::queueBegin(boolean fullInit)
+byte LD_QUE_FRAM::queueBegin(boolean fullInit)
 {
 
     setCurrFunction(68);
@@ -161,7 +144,7 @@ byte LD_QUE::queueBegin(boolean fullInit)
             if (myValue[0] == 'N') 
             {
                 addrToUse ++;
-                readItem(addrToUse, &myValue[0], 3);
+                queueItemRead(addrToUse, &myValue[0], 3);
                 myValue[3] = MyNull;
                 strVal = StrNull;
                 strVal.concat(myValue);
@@ -173,7 +156,7 @@ byte LD_QUE::queueBegin(boolean fullInit)
                     if (myValue[0] == 'N') 
                     {
                         addrToUse ++;
-                        readItem(addrToUse, &initBuffIn[0], (InitBuffMax + 1));
+                        queueItemRead(addrToUse, &initBuffIn[0], (InitBuffMax + 1));
                         for (j = 0; j < (InitBuffMax + 1); j++) 
                         {
                             if (initBuffIn[j] != initBuffOut[j]) { isOK = j + 4; }
@@ -213,14 +196,14 @@ byte LD_QUE::queueBegin(boolean fullInit)
             }      
         }
     }
-    saveQ();
+    queueSave();
     //print("done. Badblocks=");
     //print(BadBlockCount, true);
     return(BadBlockCount);
 }
 
 //  Saves the Queue header to non-volatile storage
-byte LD_QUE::saveQ()
+byte LD_QUE_FRAM::queueSave()
 {   
     setCurrFunction(67);
     uint16_t addr = MyHeaderSlot;
@@ -296,7 +279,7 @@ byte LD_QUE::saveQ()
 }
 
 //->Queing>Prepares an empty slot in the queue for the item to be loaded - length of item written is returned (or an error)
-byte LD_QUE::writeQitem(char *theData, byte theLength, char theType)
+byte LD_QUE_FRAM::queueItemWrite(char *theData, byte theLength, char theType)
 {   
     // The format of the FRAM block is as follows:
     //     U999T<struct>
@@ -394,7 +377,7 @@ byte LD_QUE::writeQitem(char *theData, byte theLength, char theType)
         interrupts();
         addrToUse++;
         // return calculated address as offset with the RAM - use this address to start writing the structure
-        saveQ();
+        queueSave();
         // now write the item to the FRAM
         char myBuff[65];        // create a temp buffer
         int i;                  //  copy the data into my temp buffer
@@ -417,7 +400,7 @@ byte LD_QUE::writeQitem(char *theData, byte theLength, char theType)
 }
 
 //  
-byte LD_QUE::readQaddr(DEQUEUE_ITEM *myItem)
+byte LD_QUE_FRAM::queueItemNextAddr(DEQUEUE_ITEM *myItem)
 {   
     setCurrFunction(65);
 
@@ -476,7 +459,7 @@ byte LD_QUE::readQaddr(DEQUEUE_ITEM *myItem)
         addrToUse++;
 
         // retrieve and store the stream length
-        readItem(addrToUse, &myValue[0], 3);
+        queueItemRead(addrToUse, &myValue[0], 3);
         myValue[4] = MyNull;
         //strVal = StrNull;
         //strVal.concat(myValue);
@@ -498,7 +481,7 @@ byte LD_QUE::readQaddr(DEQUEUE_ITEM *myItem)
         // if ixReadNext > ixMax then ixReadNext = 0;
         if (myNTread > MyDgEndSlot) { myNTread = MyDgStartSlot; }
 
-        saveQ();
+        queueSave();
         return(myItem->len);  // return the type of the item, and the index to that type's queue so the caller can retrieve the item
     } 
     else 
@@ -508,7 +491,7 @@ byte LD_QUE::readQaddr(DEQUEUE_ITEM *myItem)
 }
 
 //  
-byte LD_QUE::readItem(uint16_t addr, char *buff, byte len)
+byte LD_QUE_FRAM::queueItemRead(uint16_t addr, char *buff, byte len)
 {
     setCurrFunction(64);
     if (isActive())
@@ -533,7 +516,7 @@ byte LD_QUE::readItem(uint16_t addr, char *buff, byte len)
 }
 
 //  Returns the number of items currently queued
-byte LD_QUE::currItemCount()
+byte LD_QUE_FRAM::queueCountCurrItem()
 {
     setCurrFunction(63);
     if (isActive())

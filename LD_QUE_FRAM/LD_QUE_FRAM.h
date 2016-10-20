@@ -1,14 +1,13 @@
 //
-//  QUEUE SUB_SYSTEM HEADER FILE
+//  FRAM QUEUE SUB_SYSTEM HEADER FILE
 //
 //  (c) Lucas Design & RustyL Ventures P/L, 2016.  All rights reserved.
 //
 
-#ifndef LD_QUE_H
-#define LD_QUE_H
+#ifndef LD_QUE_FRAM_H
+#define LD_QUE_FRAM_H
 
 #include <Arduino.h>
-//#include "../LD_DEV/LD_DEV.h"
 #include <LD_BASE.h>
 #include <Adafruit_FRAM_SPI.h>
 
@@ -27,7 +26,7 @@ const int MyDgEndSlot = 101;
 const byte MyNoSlots = 100; 
 const byte MyBlockSize = 69;
 
-class LD_QUE : public LD_BASE
+class LD_QUE_FRAM : public LD_BASE
 {
 
     byte myNTwrite = 0;              // Next to write - zero relative slot number
@@ -40,14 +39,14 @@ class LD_QUE : public LD_BASE
     int myRAMport = 0;
 
 public:
-    LD_QUE(byte theUnit, byte theDeviceNumber, boolean serialEnabled, int RAMport);
-    ~LD_QUE();
+    LD_QUE_FRAM(byte theUnit, byte theDeviceNumber, boolean serialEnabled, int RAMport);
+    ~LD_QUE_FRAM();
     byte queueBegin(boolean fullInit = false);                           // returns bad blocks found in FRAM
-    byte saveQ();
-    byte currItemCount();
-    byte writeQitem(char *theData, byte theLength, char theType);
-    byte readQaddr(DEQUEUE_ITEM *myItem);
-    byte readItem(uint16_t addr, char *buff, byte len);              // copies the item from the RAM address into the buffer for the 
+    byte queueSave();
+    byte queueCountCurrItem();
+    byte queueItemWrite(char *theData, byte theLength, char theType);
+    byte queueItemNextAddr(DEQUEUE_ITEM *myItem);
+    byte queueItemRead(uint16_t addr, char *buff, byte len);              // copies the item from the RAM address into the buffer for the 
                                                                     // specified length, & returns length of item copied.
                                                                     // NB: readQ returns the address in DEQUEUE_ITEM->addr                
     byte NTwrite();                                                  // Next to write - zero relative slot number

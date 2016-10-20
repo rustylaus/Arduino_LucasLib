@@ -1,11 +1,11 @@
 //
-//  COMMS SUB_SYSTEM HEADER FILE
+//  XBEE COMMS SUB_SYSTEM HEADER FILE
 //
 //  (c) Lucas Design & RustyL Ventures P/L, 2016.  All rights reserved.
 //
 
-#ifndef LD_COM_H
-#define LD_COM_H
+#ifndef LD_STRM_XBEE_H
+#define LD_STRM_XBEE_H
 
 #include <Arduino.h>
 #include <SoftwareSerial.h>
@@ -19,7 +19,7 @@ static char DgSep = '|';
 const byte MyMaxToken = 31;     // the maximum token IX
 const byte MyMaxBuff = 64;      // the maximum buffer IX
 
-class LD_COM : public LD_BASE
+class LD_STRM_XBEE : public LD_BASE
 {
 
     char myBuff[65];          // Area to read I/O chars into from a device
@@ -34,10 +34,10 @@ class LD_COM : public LD_BASE
     boolean myLogComms = false;
 
 public:
-    LD_COM(byte theUnit, byte theDeviceNumber, boolean serialEnabled, int theRxPort, int theTxPort);
-    ~LD_COM();
-    void commBegin(long thePortSpeed, boolean logComms = false);
-    void commListen();
+    LD_STRM_XBEE(byte theUnit, byte theDeviceNumber, boolean serialEnabled, int theRxPort, int theTxPort);
+    ~LD_STRM_XBEE();
+    void streamBegin(long thePortSpeed, boolean sendSerial = false);
+    void streamListen();
     byte outputInit(char *theBuffer, byte theMaxIX);
     byte outputBuild(char *theSource, char *theBuff, byte theLen);                          // commOutputBld
     byte outputFill(char *theSource, char *theBuff, byte theBuffOffset, byte theLength);

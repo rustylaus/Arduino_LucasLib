@@ -1,30 +1,11 @@
-#include <LD_COM.h>
+#include <LD_STRM_XBEE.h>
 
 /*
-    LD_COM(String theUnit, byte theDeviceNumber, boolean serialEnabled, int theRxPort, int theTxPort);
-    ~LD_COM();
-    void commInit(long thePortSpeed);
-    byte outputInit(char *theBuffer, byte theMaxIX);
-    byte outputBuild(char *theSource, char *theBuff, byte theLen);                          // commOutputBld
-    byte outputFill(char *theSource, char *theBuff, byte theBuffOffset, byte theLength);
-    byte outputSend(char *theBuff, char theType, byte theLength);                           // commsBufferSend
-    void outputSendChar(char theChar);                                  // poss internal    // commsCharSend
-    int inputAvailable();
-    byte inputRecv(boolean discard = false);                                                // commsBufferGet
-    byte inputLen();
-    byte tokenGetLen(int theLength, int theOffset = 999);                                   // buffCharsGetLen
-    byte tokenGetSep(int theOffset = 999);                                                  // buffCharsGetSep
-    char tokenChar(byte theIX);
-    int tokenInt();
-    String tokenString();
-    byte tokenLen();
-    char dgType();
-    byte MaxToken();
-    byte MaxBuff();
+
 */
 
 //  Constructor
-LD_COM::LD_COM(byte theUnit, byte theDeviceNumber, boolean serialEnabled, int theRxPort, int theTxPort)
+LD_STRM_XBEE::LD_STRM_XBEE(byte theUnit, byte theDeviceNumber, boolean serialEnabled, int theRxPort, int theTxPort)
     : xBee(theRxPort, theTxPort)
 {
     setCurrFunction(89);
@@ -33,17 +14,17 @@ LD_COM::LD_COM(byte theUnit, byte theDeviceNumber, boolean serialEnabled, int th
 }
 
 //  Destructor
-LD_COM::~LD_COM()
+LD_STRM_XBEE::~LD_STRM_XBEE()
 {
     setCurrFunction(0);
     /* nothing to do */
 }
 
-void LD_COM::commBegin(long thePortSpeed, boolean logComms)
+void LD_STRM_XBEE::streamBegin(long thePortSpeed, boolean sendSerial)
 {
     setCurrFunction(89);
     //xBee = SoftwareSerial xBee(theRxPort, theTxPort);
-    myLogComms = logComms;
+    myLogComms = sendSerial;
     /*
     if (myLogComms)
     {
@@ -58,7 +39,7 @@ void LD_COM::commBegin(long thePortSpeed, boolean logComms)
     setActive(true);
 }
 
-void LD_COM::commListen()
+void LD_STRM_XBEE::streamListen()
 {
     setCurrFunction(88);
         // if the device is active...
@@ -72,17 +53,17 @@ void LD_COM::commListen()
     }
 }
 
-byte LD_COM::inputLen()
+byte LD_STRM_XBEE::inputLen()
 {
     return(myBuffLen);
 }
 
-char LD_COM::tokenChar(byte theIX)
+char LD_STRM_XBEE::tokenChar(byte theIX)
 {
     return(myToken[theIX]);
 }
 
-int LD_COM::tokenInt()
+int LD_STRM_XBEE::tokenInt()
 {
     setCurrFunction(87);
     //print("Tkn=");
@@ -93,7 +74,7 @@ int LD_COM::tokenInt()
     return((atoi(myToken)));
 }
 
-String LD_COM::tokenString()
+String LD_STRM_XBEE::tokenString()
 {   
     setCurrFunction(86);
     String s = StrNull;
@@ -101,27 +82,27 @@ String LD_COM::tokenString()
     return(s);
 }
 
-byte LD_COM::tokenLen()
+byte LD_STRM_XBEE::tokenLen()
 {
     return(myTokenLen);
 }
 
-char LD_COM::dgType()
+char LD_STRM_XBEE::dgType()
 {
     return(myCommType);
 }
 
-byte LD_COM::MaxBuff()
+byte LD_STRM_XBEE::MaxBuff()
 {
     return(MyMaxBuff);
 }
 
-byte LD_COM::MaxToken()
+byte LD_STRM_XBEE::MaxToken()
 {
     return(MyMaxToken);
 }
 
-byte LD_COM::outputInit(char *theBuffer, byte theMaxIX)
+byte LD_STRM_XBEE::outputInit(char *theBuffer, byte theMaxIX)
 // also initialises the 
 // returns the length of the buffer as confirmation, or an error (<0)
 {
@@ -144,7 +125,7 @@ byte LD_COM::outputInit(char *theBuffer, byte theMaxIX)
     }
 }
 
-byte LD_COM::outputFill(char *theSource, char *theBuff, byte theBuffOffset, byte theLength)
+byte LD_STRM_XBEE::outputFill(char *theSource, char *theBuff, byte theBuffOffset, byte theLength)
 // This does a straight copy of the theSource to the output buffer after some checking
 {
     byte i;
@@ -181,7 +162,7 @@ byte LD_COM::outputFill(char *theSource, char *theBuff, byte theBuffOffset, byte
     }
 }
 
-byte LD_COM::outputBuild(char *theSource, char *theBuff, byte theLen)
+byte LD_STRM_XBEE::outputBuild(char *theSource, char *theBuff, byte theLen)
 // This does a copy of the source to the output buffer, but also maintains an index of where the next available 
 // byte is located in the buffer - returns the number of bytes copied
 {
@@ -195,7 +176,7 @@ byte LD_COM::outputBuild(char *theSource, char *theBuff, byte theLen)
     return(myOC);
 }
 
-byte LD_COM::outputSend(char *theBuff, char theType, byte theLength)
+byte LD_STRM_XBEE::outputSend(char *theBuff, char theType, byte theLength)
 //  theLength is the length of the contents in bufferOutput, not the entire length of the datagram.  We will calculate the latter.
 {
     int i;
@@ -277,7 +258,7 @@ byte LD_COM::outputSend(char *theBuff, char theType, byte theLength)
     return(myOC);
 }
 
-void LD_COM::outputSendChar(char theChar) 
+void LD_STRM_XBEE::outputSendChar(char theChar) 
 {
     setCurrFunction(81);
     myOC = 0;
@@ -296,14 +277,14 @@ void LD_COM::outputSendChar(char theChar)
     //if (_logComms) { _ser.print(theChar); }
 }
 
-int LD_COM::inputAvailable()
+int LD_STRM_XBEE::inputAvailable()
 {
     setCurrFunction(80);
     myOC = 0;
     return(xBee.available());
 }
 
-byte LD_COM::inputRecv(boolean theDiscard) 
+byte LD_STRM_XBEE::inputRecv(boolean theDiscard) 
 {
 
     // A valid datagram has the format
@@ -453,7 +434,7 @@ byte LD_COM::inputRecv(boolean theDiscard)
     return(myOC);
 }
 
-byte LD_COM::tokenGetLen(int theLength, int theOffset) 
+byte LD_STRM_XBEE::tokenGetLen(int theLength, int theOffset) 
 {
 
     byte i;
@@ -510,7 +491,7 @@ byte LD_COM::tokenGetLen(int theLength, int theOffset)
     }
 }
 
-byte LD_COM::tokenGetSep(int theOffset) 
+byte LD_STRM_XBEE::tokenGetSep(int theOffset) 
 // uses the internal offset for starting position if TheOffset = 999
 {
     byte i;
