@@ -43,15 +43,17 @@ const char MsgSevErrFatal[] = "4";
 
 //const byte MsgOverhead = 15;
 
-
+#define MsgTokenArraySize 32    // The size of the token character array
+#define MsgTokenMaxCount 9      // The maximum number of tokens permitted in a message
+#define MsgDatagramMaxSize 64 // The maximum size of the message datagram to fit into CommBuffer
 
 // Message Parsing
 static char MsgValueSep = '^';
 static char MsgToken[] = ":$:";
 static byte MsgTokenLen = 3; // refers to the length of the above string
-static byte MsgTokenMax = 8;
-static byte MsgTokenMaxIX = 31;
-static byte MessageMax = 64;
+static byte MsgTokenMax = MsgTokenMaxCount;
+static byte MsgTokenMaxIX = MsgTokenArraySize - 1;
+static byte MessageMax = MsgDatagramMaxSize;
 
 class LD_MSG : public LD_BASE
 {
@@ -61,7 +63,7 @@ class LD_MSG : public LD_BASE
     byte myMsgDevice;
     byte myMsgMethod;
     int myMsgNo;
-    char myTokenValue[32];
+    char myTokenValue[MsgTokenArraySize];
     byte myTokenIX;
 
 public:

@@ -1,35 +1,7 @@
 #include "LD_BASE.h"
 
 /*
-    LD_BASE();                                           // Constructor
-    ~LD_BASE();                                          // De-Constructor
-    void deviceInit(String theUnit, byte theDeviceNumber, boolean serialEnabled) // base initialiser
-    void setDevice(byte theNumber);                     // sets this device number
-    byte device();                                      // gets the device number
-    void setCurrFunction(byte theFunction);             // sets the current function number
-    byte currFunction();                                // gets the current function
-    // Enabled indicates whether the device is connected, on and able to be used
-    // Active indicates whether the device is currently being used.  A device must be enabled before it can ever be active.
-    void setEnabled(boolean isEnabled);                 // sets the enabled status
-    boolean isEnabled();                                // returns whether the device is enabled
-    byte enabled();                                     // returns 1 if enabled or 0 if not
-    void setActive(boolean isActive);                   // sets the active status
-    boolean isActive();                                 // returns whether the device is active
-    byte active();                                      // returns 1 if active or 0 if not
-    byte setError(byte theError);                       // indicates a new error
-    boolean newError(boolean resetNewError = true);     // Indicates if a new error has just occurred
-    byte error(byte theIndex = 0);                      // returns the error indicated by theIndex, the latest error being the default
-    byte errorFnc(byte theIndex = 0);                   // returns the error function indicated by the index
-    void printOn(long thePortSpeed);
-    void printOff();
-    void print(String theString, boolean newLine = false);                              // Prints a String
-    void print(int theInt, boolean newLine = false, boolean isDec = false);             // Prints an integer, optionally as DEC
-    void print(unsigned int theInt, boolean newLine = false, boolean isDec = false);    // Prints an unsigned integer, optionally as DEC
-    void print(char theChar, boolean newLine = false, boolean isHex = false);           // Prints a char, optionally as HEX
-    void printArray(char *theChar, int theLen, boolean isHex = false);                  // Prints char array for specified length
-    void printStat(String theString, int theStatus);
-    void dumpErrInfo();
-    void dumpDevInfo();   
+  
 */
 
 boolean mySerialActive = false;
@@ -48,11 +20,17 @@ char fHxChr[3];
         mySerialEnabled = false;
         mySerialActive = false;
         myTotalErrors = 0;
+        handler = 0;
 
-        for (i = 0; i < ErrorArraySize; i++)
+        for (i = 0; i < LD_ErrorArraySize; i++)
         {
             myError[i] = 0;
             myErrorFnc[i] = 0;
+        }
+        
+        for (i = 0; i < LD_ActionArraySize; i++)
+        {
+            myAction[i] = 0;
         }
     }
 
@@ -205,14 +183,16 @@ char fHxChr[3];
         */
         // Update the structure first
         //myError[2] = myError[1];
-        myError[1] = myError[0];
+        byte i;
+        for (i=(LD_ErrorArraySize - 1); i > 0; i--)
+        {
+            myError[i] = myError[i - 1];
+            myErrorFnc[i] = myErrorFnc[i - 1];
+        }
         myError[0] = (256 - theErrorNo);
-        //myErrorFnc[2] = myErrorFnc[1];
-        myErrorFnc[1] = myErrorFnc[0];
         myErrorFnc[0] = myCurrFunction;
         myTotalErrors ++;
         myNewError = true;
-
         return(theErrorNo);
     }
 
@@ -231,7 +211,7 @@ char fHxChr[3];
     //  default:= theIndex = 0
     {
         myCurrFunction = 118;
-        if (theIndex > -1 && theIndex < ErrorArraySize)
+        if (theIndex > -1 && theIndex < LD_ErrorArraySize)
         {
             return(myError[theIndex]);
         } else {
@@ -244,7 +224,7 @@ char fHxChr[3];
     //  default:= theIndex = 0
     {
         myCurrFunction = 117;
-        if (theIndex > -1 && theIndex < ErrorArraySize)
+        if (theIndex > -1 && theIndex < LD_ErrorArraySize)
         {
             return(myErrorFnc[theIndex]);
         } else {
@@ -252,10 +232,44 @@ char fHxChr[3];
         }
     }
 
+    void LD_BASE::setAction(byte theAction, boolean theSwitch)
+    {
+        myCurrFunction = 115;
+        if (theAction > -1 && theAction < LD_ActionArraySize)
+        {
+            myAction[theAction] = theSwitch;
+        }
+    }
+
+    boolean LD_BASE::hasHandler()
+    {
+        if (handler == 0)
+        {
+            return(false);
+        }
+        else
+        {
+            return(true);
+        }
+    }
+    
+    boolean LD_BASE::hasAction(byte theAction)
+    {
+        myCurrFunction = 114;
+        if (theAction > -1 && theAction < LD_ActionArraySize)
+        {
+            return(myAction[theAction]);
+        }
+        else
+        {
+            return(false);
+        }
+    }
+
     //  Serial device initialisation
     void LD_BASE::printBegin(long thePortSpeed)
     {
-        myCurrFunction = 115;
+        myCurrFunction = 113;
         // check that I am enabled first
         if (myDeviceInitialised)
         {
@@ -291,7 +305,7 @@ char fHxChr[3];
     //  Serial device off
     void LD_BASE::printEnd()
     {
-        myCurrFunction = 114;
+        myCurrFunction = 112;
         mySerialActive = false;
     }
 

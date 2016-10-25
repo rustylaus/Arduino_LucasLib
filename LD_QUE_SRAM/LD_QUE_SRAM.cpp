@@ -499,7 +499,8 @@ byte LD_QUE_SRAM::queueItemRead(uint16_t addr, char *buff, byte len)
         /*
         print("readItem: Len=");
         print(len);
-        print(", Val='");*/
+        print(", Val='");
+        */
         for (i = 0; i < len; i++)
         {
             *(buff + i) = fram.read8(addr + i);

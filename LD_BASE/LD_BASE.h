@@ -7,10 +7,14 @@
 #ifndef LD_BASE_H
 #define LD_BASE_H
 
+#define YOGGER
+
 #include <Arduino.h>
 #include <LD_COMMON.h>
 
-#define ErrorArraySize 2
+#ifdef YOGGER
+    #include <LD_UNIT_YGR_DATADIMENSIONS.h>
+#endif
 
 class LD_BASE 
 {
@@ -23,12 +27,15 @@ class LD_BASE
     boolean myActive = false;
     boolean mySerialEnabled = false;
     boolean myNewError = false;
-    byte myError[ErrorArraySize];
-    byte myErrorFnc[ErrorArraySize];
+    byte myError[LD_ErrorArraySize];
+    byte myErrorFnc[LD_ErrorArraySize];
     int myTotalErrors = 0;
     char fmtByteBuff[8];
+    boolean myAction[LD_ActionArraySize];
 
 public:
+
+    void (*handler)(byte theAction);
 
     LD_BASE(); // Constructor
     ~LD_BASE();                                         // De-Constructor
@@ -61,6 +68,10 @@ public:
     void dumpErrInfo(char *buff, byte theStartOffset);                             
     void dumpDevInfo(char *buff);
 
+    boolean hasHandler();
+    void setAction(byte theAction = 0, boolean theSwitch = false);
+    boolean hasAction(byte theAction = 0);
+    
 private:
 
     char chrTF(boolean theValue)

@@ -1,26 +1,25 @@
-#include <LD_STRM_XBEE.h>
+#include <LD_STRM_SSER.h>
 
 /*
 
 */
 
 //  Constructor
-LD_STRM_XBEE::LD_STRM_XBEE(byte theUnit, byte theDeviceNumber, boolean serialEnabled, int theRxPort, int theTxPort)
-    : xBee(theRxPort, theTxPort)
+LD_STRM_SSER::LD_STRM_SSER(byte theUnit, byte theDeviceNumber, boolean serialEnabled, int theRxPort, int theTxPort)
+    : sSER(theRxPort, theTxPort)
 {
-    setCurrFunction(89);
     deviceBegin(theUnit, theDeviceNumber, serialEnabled);
     setEnabled(true);
 }
 
 //  Destructor
-LD_STRM_XBEE::~LD_STRM_XBEE()
+LD_STRM_SSER::~LD_STRM_SSER()
 {
     setCurrFunction(0);
     /* nothing to do */
 }
 
-void LD_STRM_XBEE::streamBegin(long thePortSpeed, boolean sendSerial)
+void LD_STRM_SSER::streamBegin(long thePortSpeed, boolean sendSerial)
 {
     setCurrFunction(89);
     //xBee = SoftwareSerial xBee(theRxPort, theTxPort);
@@ -35,17 +34,17 @@ void LD_STRM_XBEE::streamBegin(long thePortSpeed, boolean sendSerial)
         print("Log comms not active");
     }
     */
-    xBee.begin(thePortSpeed);
+    sSER.begin(thePortSpeed);
     setActive(true);
 }
 
-void LD_STRM_XBEE::streamListen()
+void LD_STRM_SSER::streamListen()
 {
     setCurrFunction(88);
         // if the device is active...
     if (isActive())
     {   
-        xBee.listen();
+        sSER.listen();
     }
     else 
     {
@@ -53,19 +52,18 @@ void LD_STRM_XBEE::streamListen()
     }
 }
 
-byte LD_STRM_XBEE::inputLen()
+byte LD_STRM_SSER::inputLen()
 {
     return(myBuffLen);
 }
 
-char LD_STRM_XBEE::tokenChar(byte theIX)
+char LD_STRM_SSER::tokenChar(byte theIX)
 {
     return(myToken[theIX]);
 }
 
-int LD_STRM_XBEE::tokenInt()
+int LD_STRM_SSER::tokenInt()
 {
-    setCurrFunction(87);
     //print("Tkn=");
     //printArray(&myToken[0],5,true);
     //print("=>");
@@ -74,40 +72,40 @@ int LD_STRM_XBEE::tokenInt()
     return((atoi(myToken)));
 }
 
-String LD_STRM_XBEE::tokenString()
+String LD_STRM_SSER::tokenString()
 {   
-    setCurrFunction(86);
+    setCurrFunction(87);
     String s = StrNull;
     s.concat(myToken);
     return(s);
 }
 
-byte LD_STRM_XBEE::tokenLen()
+byte LD_STRM_SSER::tokenLen()
 {
     return(myTokenLen);
 }
 
-char LD_STRM_XBEE::dgType()
+char LD_STRM_SSER::dgType()
 {
     return(myCommType);
 }
 
-byte LD_STRM_XBEE::MaxBuff()
+byte LD_STRM_SSER::MaxBuff()
 {
     return(MyMaxBuff);
 }
 
-byte LD_STRM_XBEE::MaxToken()
+byte LD_STRM_SSER::MaxToken()
 {
     return(MyMaxToken);
 }
 
-byte LD_STRM_XBEE::outputInit(char *theBuffer, byte theMaxIX)
+byte LD_STRM_SSER::outputInit(char *theBuff, byte theMaxIX)
 // also initialises the 
 // returns the length of the buffer as confirmation, or an error (<0)
 {
     int i;
-    setCurrFunction(85);
+    setCurrFunction(86);
 
     if (theMaxIX > MyMaxBuff)
     {
@@ -118,18 +116,18 @@ byte LD_STRM_XBEE::outputInit(char *theBuffer, byte theMaxIX)
         myOutputMax = theMaxIX;
         for (i = 0; i < (myOutputMax + 1); i++)
         {
-            *(theBuffer + i) = MyNull;
+            *(theBuff + i) = MyNull;
         }
         myOutputIX = 0;
         return(theMaxIX);
     }
 }
 
-byte LD_STRM_XBEE::outputFill(char *theSource, char *theBuff, byte theBuffOffset, byte theLength)
+byte LD_STRM_SSER::outputFill(char *theSource, char *theBuff, byte theBuffOffset, byte theLength)
 // This does a straight copy of the theSource to the output buffer after some checking
 {
     byte i;
-    setCurrFunction(84);
+    setCurrFunction(85);
 
     // if the device is active...
     if (isActive())
@@ -162,11 +160,11 @@ byte LD_STRM_XBEE::outputFill(char *theSource, char *theBuff, byte theBuffOffset
     }
 }
 
-byte LD_STRM_XBEE::outputBuild(char *theSource, char *theBuff, byte theLen)
+byte LD_STRM_SSER::outputBuild(char *theSource, char *theBuff, byte theLen)
 // This does a copy of the source to the output buffer, but also maintains an index of where the next available 
 // byte is located in the buffer - returns the number of bytes copied
 {
-    setCurrFunction(83);
+    setCurrFunction(84);
     myOC = 0;
     // go fill the output buffer after checking it will not overflow
     myOC = outputFill(theSource, theBuff, myOutputIX, theLen);  // returns an error (<0) or the number of bytes copied
@@ -176,7 +174,7 @@ byte LD_STRM_XBEE::outputBuild(char *theSource, char *theBuff, byte theLen)
     return(myOC);
 }
 
-byte LD_STRM_XBEE::outputSend(char *theBuff, char theType, byte theLength)
+byte LD_STRM_SSER::outputSend(char *theBuff, char theType, byte theLength)
 //  theLength is the length of the contents in bufferOutput, not the entire length of the datagram.  We will calculate the latter.
 {
     int i;
@@ -186,7 +184,7 @@ byte LD_STRM_XBEE::outputSend(char *theBuff, char theType, byte theLength)
     
     char lenF[4];
     
-    setCurrFunction(82);
+    setCurrFunction(83);
     myOC = 0;
 
     if (isActive())
@@ -258,9 +256,9 @@ byte LD_STRM_XBEE::outputSend(char *theBuff, char theType, byte theLength)
     return(myOC);
 }
 
-void LD_STRM_XBEE::outputSendChar(char theChar) 
+void LD_STRM_SSER::outputSendChar(char theChar) 
 {
-    setCurrFunction(81);
+    setCurrFunction(82);
     myOC = 0;
     if (myLogComms)
     {
@@ -273,18 +271,27 @@ void LD_STRM_XBEE::outputSendChar(char theChar)
             print(theChar, false);
         }
     }
-    xBee.write(theChar);
+    sSER.write(theChar);
     //if (_logComms) { _ser.print(theChar); }
 }
 
-int LD_STRM_XBEE::inputAvailable()
+//
+//  Copied the contents of my buffer to the supplied buffer, for the length supplied
+void LD_STRM_SSER::bufferCopy(char *theDestinationBuff , byte theLength)
+{
+    setCurrFunction(81);
+    memcpy(theDestinationBuff, &buff, theLength);
+}
+
+// Is there any input available, and if so, how many characters
+int LD_STRM_SSER::inputAvailable()
 {
     setCurrFunction(80);
     myOC = 0;
-    return(xBee.available());
+    return(sSER.available());
 }
 
-byte LD_STRM_XBEE::inputRecv(boolean theDiscard) 
+byte LD_STRM_SSER::inputRecv(boolean theDiscard) 
 {
 
     // A valid datagram has the format
@@ -314,7 +321,7 @@ byte LD_STRM_XBEE::inputRecv(boolean theDiscard)
     for (i = 0; i < MyMaxBuff; i++) 
     {
         //bufferInput[i] = MyNull;
-        myBuff[i] = MyNull;
+        buff[i] = MyNull;
     }
     
     //  Check the device is active
@@ -327,13 +334,13 @@ byte LD_STRM_XBEE::inputRecv(boolean theDiscard)
         //delay(500);
         while (commChar != DgEnd && i < MyMaxBuff)        // We could loop for-ever here waiting for the end sentinel - may need a circuit breaker in case of comms error
         {                                            
-            c = xBee.available();
+            c = sSER.available();
             //_ser.print(c);
             //delay(2000);
             if (c > 0) 
             {
                 //delay(100);
-                commChar = xBee.read();                                              // Receive a single character from the software serial port
+                commChar = sSER.read();                                              // Receive a single character from the software serial port
                 if (myLogComms)
                 {
                     if (commChar < ' ')
@@ -355,7 +362,7 @@ byte LD_STRM_XBEE::inputRecv(boolean theDiscard)
                 {
                     //_commBufferInput.concat(_commChar);                                // Add the received character to the receive buffer ONLY if we have found the start of the dialog
                     //bufferInput[i] = commChar;
-                    myBuff[i] = commChar;
+                    buff[i] = commChar;
                     i++;
                 }
                 if (!theDiscard && commChar == DgStart) { foundStart = true; }
@@ -381,7 +388,7 @@ byte LD_STRM_XBEE::inputRecv(boolean theDiscard)
                 for (o = 0; o < 4; o++) 
                 {
                     //valueF[o] = bufferInput[o];
-                    valueF[o] = myBuff[o];
+                    valueF[o] = buff[o];
                 }
                 //strVal.concat(valueF);
                 //myBuffLen = strVal.toInt(); // this is the length WITHOUT the overhead, but with the type!
@@ -400,12 +407,12 @@ byte LD_STRM_XBEE::inputRecv(boolean theDiscard)
                     // the length was good!
                     // Next, get the comms type and load it into _commType
                     //myCommType = bufferInput[4];
-                    myCommType = myBuff[4];
+                    myCommType = buff[4];
                     // Now load the remainder of the input buffer into the WORK_IO.buff array
                     for (o = 0; o < myBuffLen; o++)          // note that buffLen = the associated structure ONLY, not the initial overhead (4 char length + 1 char type)
                     {
-                        myBuff[o] = myBuff[(o + 5)];
-                        //myBuff[o] = bufferInput[(o + 5)];
+                        buff[o] = buff[(o + 5)];
+                        //buff[o] = bufferInput[(o + 5)];
                         //_commBufferInput.toCharArray(*ioWork->buff,100);
                     }
                     // set the outcome to equal the length of the buffer
@@ -434,7 +441,7 @@ byte LD_STRM_XBEE::inputRecv(boolean theDiscard)
     return(myOC);
 }
 
-byte LD_STRM_XBEE::tokenGetLen(int theLength, int theOffset) 
+byte LD_STRM_SSER::tokenGetLen(int theLength, int theOffset) 
 {
 
     byte i;
@@ -456,7 +463,7 @@ byte LD_STRM_XBEE::tokenGetLen(int theLength, int theOffset)
         i=0;
         while ((i < theLength))            // No longer going to check for separator [&& (ioWork->buff + (theOffset + i) != DgSep)]
         {
-            myToken[i] = myBuff[(theOffset + i)];
+            myToken[i] = buff[(theOffset + i)];
             i++;
         }
         // set the offset to start on the next call
@@ -491,7 +498,7 @@ byte LD_STRM_XBEE::tokenGetLen(int theLength, int theOffset)
     }
 }
 
-byte LD_STRM_XBEE::tokenGetSep(int theOffset) 
+byte LD_STRM_SSER::tokenGetSep(int theOffset) 
 // uses the internal offset for starting position if TheOffset = 999
 {
     byte i;
@@ -509,9 +516,9 @@ byte LD_STRM_XBEE::tokenGetSep(int theOffset)
     
     // copy chars up to the separator
     i = 0;
-    while ( myBuff[(theOffset + i)] != DgSep && ((theOffset + i) < (myBuffLen + 1)) && (i < MyMaxToken) ) 
+    while ( buff[(theOffset + i)] != DgSep && ((theOffset + i) < (myBuffLen + 1)) && (i < MyMaxToken) ) 
     {
-        myToken[i] = myBuff[(theOffset + i)];
+        myToken[i] = buff[(theOffset + i)];
         i++;
     }
 
